@@ -1,0 +1,617 @@
+{
+ "name": "RozContent — E-commerce Order Assistant",
+ "nodes": [
+  {
+   "id": "a9000000-0000-4000-8000-000000000001",
+   "name": "Sticky — Overview",
+   "parameters": {
+    "color": 4,
+    "content": "## 🎯 What this workflow does\n\n**Flow A — order events:** your Shopify or WooCommerce store sends an order webhook → the order is normalised and saved to a Google Sheet (`Orders` tab) → a new order triggers a warm confirmation email to the customer **and** an alert to you; a fulfilled order triggers a shipping update instead (tracking line only if the payload actually carried one).\n\n**Flow B — abandoned carts:** every hour it reads the `Abandoned Carts` tab, emails a friendly checkout reminder for any cart left over an hour with no reminder yet, and marks the row so nobody gets reminded twice.\n\n**Follow the sticky notes in order: SETUP first, then test, then activate.**\n\nBuilt by RozContent — free template. The paid version adds direct store-API cart sync (no sheet in the middle), courier tracking links, refund/returns flows and a second reminder stage."
+   },
+   "position": [
+    -1060,
+    -180
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000002",
+   "name": "Sticky — Setup",
+   "parameters": {
+    "color": 5,
+    "content": "## 🛠️ SETUP — do these before activating\n\n1. **Google Sheet:** one sheet, two tabs named exactly `Orders` and `Abandoned Carts` (headers are in this template's README). Paste its ID into all three Google Sheets nodes (replace `PASTE_YOUR_GOOGLE_SHEET_ID`).\n2. **Credentials:** click each Google Sheets / Gmail node and connect YOUR Google account. The placeholders in this file are dummies — n8n will prompt you.\n3. **CONFIG nodes (both of them):** Flow A's `CONFIG — Edit Me` and Flow B's `CONFIG — Store (Flow B)` — set store name, owner email, support email and currency in each, and keep them in sync.\n4. **Store webhook (Flow A):** copy this workflow's Production URL from the `Store Order Webhook` node. WooCommerce: Settings → Advanced → Webhooks → Add webhook (topic: Order created / Order updated, delivery URL = the Production URL). Shopify: Settings → Notifications → Webhooks → Create webhook (Order creation / Order fulfilment).\n5. **Abandoned carts (Flow B):** something must write abandoned carts into the `Abandoned Carts` tab — a Shopify/WooCommerce checkout app or plugin export can do it; many basic stores cannot send cart webhooks (see Production Notes).\n6. **Test** with a real test order and a fake cart row (README) before switching Active on."
+   },
+   "position": [
+    -1060,
+    460
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000003",
+   "name": "Sticky — Production Notes",
+   "parameters": {
+    "color": 6,
+    "content": "## ⚠️ Production notes (read once)\n\n- ⚠️ **Payload shapes differ between platforms.** Shopify and WooCommerce name order fields differently, so `Normalise Order` uses defensive fallback expressions — expect a ~10-minute remap there using a real test payload from YOUR store before going live.\n- ⚠️ **Flow B only sees what is in the sheet.** If abandoned carts never reach the `Abandoned Carts` tab, no reminders send. The paid build reads the store API directly instead.\n- ⚠️ **No tracking is ever invented.** The shipping email includes a tracking number/link only when the webhook payload carried one; otherwise it honestly says tracking details will follow from the courier.\n- ⚠️ **Emails send from the Gmail account you connect.** Connect the store's real support inbox so customer replies land somewhere monitored.\n- ⚠️ **One reminder only.** This free version sends a single cart reminder per row and marks it sent; it does not run a multi-step recovery sequence."
+   },
+   "position": [
+    860,
+    430
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000004",
+   "name": "Store Order Webhook",
+   "webhookId": "rozcontent-store-order",
+   "parameters": {
+    "httpMethod": "POST",
+    "options": {},
+    "path": "store-order",
+    "responseMode": "onReceived"
+   },
+   "position": [
+    -760,
+    180
+   ],
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000005",
+   "name": "Normalise Order",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "as-order-id",
+       "name": "order_id",
+       "type": "string",
+       "value": "={{ $json.body.order_number || $json.body.id || $json.body.order_id || '' }}"
+      },
+      {
+       "id": "as-customer-name",
+       "name": "customer_name",
+       "type": "string",
+       "value": "={{ $json.body.billing ? (($json.body.billing.first_name || '') + ' ' + ($json.body.billing.last_name || '')).trim() : ($json.body.customer ? (($json.body.customer.first_name || '') + ' ' + ($json.body.customer.last_name || '')).trim() : ($json.body.billing_address ? (($json.body.billing_address.first_name || '') + ' ' + ($json.body.billing_address.last_name || '')).trim() : 'Customer')) }}"
+      },
+      {
+       "id": "as-customer-email",
+       "name": "customer_email",
+       "type": "string",
+       "value": "={{ $json.body.email || ($json.body.billing ? $json.body.billing.email : '') || ($json.body.customer ? $json.body.customer.email : '') || '' }}"
+      },
+      {
+       "id": "as-total",
+       "name": "total",
+       "type": "string",
+       "value": "={{ $json.body.total_price || $json.body.total || $json.body.order_total || '' }}"
+      },
+      {
+       "id": "as-currency",
+       "name": "currency",
+       "type": "string",
+       "value": "={{ $json.body.currency || $json.body.order_currency || '' }}"
+      },
+      {
+       "id": "as-items",
+       "name": "items_summary",
+       "type": "string",
+       "value": "={{ ($json.body.line_items || []).map(i => (i.quantity || i.qty || 1) + ' x ' + (i.name || i.title || 'item')).join(', ') }}"
+      },
+      {
+       "id": "as-event",
+       "name": "event_type",
+       "type": "string",
+       "value": "={{ ($json.body.fulfillment_status || $json.body.status === 'completed' || $json.body.status === 'fulfilled') ? 'fulfilled' : 'new_order' }}"
+      },
+      {
+       "id": "as-tracking-number",
+       "name": "tracking_number",
+       "type": "string",
+       "value": "={{ $json.body.tracking_number || '' }}"
+      },
+      {
+       "id": "as-tracking-url",
+       "name": "tracking_url",
+       "type": "string",
+       "value": "={{ $json.body.tracking_url || '' }}"
+      },
+      {
+       "id": "as-received",
+       "name": "received_at",
+       "type": "string",
+       "value": "={{ $now.toISO() }}"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -500,
+    180
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000006",
+   "name": "CONFIG — Edit Me",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "cfg-store-name",
+       "name": "config_store_name",
+       "type": "string",
+       "value": "Your Store"
+      },
+      {
+       "id": "cfg-owner-email",
+       "name": "config_owner_email",
+       "type": "string",
+       "value": "owner@yourstore.com"
+      },
+      {
+       "id": "cfg-support-email",
+       "name": "config_support_email",
+       "type": "string",
+       "value": "support@yourstore.com"
+      },
+      {
+       "id": "cfg-currency",
+       "name": "config_currency",
+       "type": "string",
+       "value": "USD"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -240,
+    180
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000007",
+   "name": "Order Fulfilled?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-fulfilled",
+       "leftValue": "={{ $json.event_type }}",
+       "operator": {
+        "operation": "equals",
+        "type": "string"
+       },
+       "rightValue": "fulfilled"
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    20,
+    180
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000008",
+   "name": "Save Order to Sheet",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Currency": "={{ $json.currency || $json.config_currency }}",
+      "Customer": "={{ $json.customer_name }}",
+      "Email": "={{ $json.customer_email }}",
+      "Event": "={{ $json.event_type }}",
+      "Items": "={{ $json.items_summary }}",
+      "Order ID": "={{ $json.order_id }}",
+      "Timestamp": "={{ $json.received_at }}",
+      "Total": "={{ $json.total }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Orders"
+    }
+   },
+   "position": [
+    280,
+    340
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000009",
+   "name": "Send Order Confirmation",
+   "parameters": {
+    "emailType": "text",
+    "message": "Hi {{ $('Normalise Order').first().json.customer_name.split(' ')[0] }},\n\nThanks for ordering from {{ $('CONFIG — Edit Me').first().json.config_store_name }} — your order is confirmed and we're getting it ready.\n\nOrder: #{{ $('Normalise Order').first().json.order_id }}\nItems: {{ $('Normalise Order').first().json.items_summary }}\nTotal: {{ $('Normalise Order').first().json.total }} {{ $('Normalise Order').first().json.currency || $('CONFIG — Edit Me').first().json.config_currency }}\n\nYou'll get another email when your order ships. Anything wrong, or a question about your order? Reply to this email or write to {{ $('CONFIG — Edit Me').first().json.config_support_email }} and a real person will help.\n\nThanks again,\n{{ $('CONFIG — Edit Me').first().json.config_store_name }}",
+    "options": {},
+    "sendTo": "={{ $('Normalise Order').first().json.customer_email }}",
+    "subject": "=Order confirmed — #{{ $('Normalise Order').first().json.order_id }} at {{ $('CONFIG — Edit Me').first().json.config_store_name }}"
+   },
+   "position": [
+    540,
+    340
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000010",
+   "name": "Notify Owner — New Order",
+   "parameters": {
+    "emailType": "text",
+    "message": "A new order just came in at {{ $('CONFIG — Edit Me').first().json.config_store_name }} and has been saved to the Orders sheet.\n\nOrder: #{{ $('Normalise Order').first().json.order_id }}\nCustomer: {{ $('Normalise Order').first().json.customer_name }} ({{ $('Normalise Order').first().json.customer_email }})\nItems: {{ $('Normalise Order').first().json.items_summary }}\nTotal: {{ $('Normalise Order').first().json.total }} {{ $('Normalise Order').first().json.currency || $('CONFIG — Edit Me').first().json.config_currency }}\nReceived: {{ $('Normalise Order').first().json.received_at }}\n\nThe customer has already received their confirmation email. Your move: fulfil the order in the store.",
+    "options": {},
+    "sendTo": "={{ $('CONFIG — Edit Me').first().json.config_owner_email }}",
+    "subject": "=🛒 New order #{{ $('Normalise Order').first().json.order_id }} — {{ $('Normalise Order').first().json.total }} {{ $('Normalise Order').first().json.currency || $('CONFIG — Edit Me').first().json.config_currency }}"
+   },
+   "position": [
+    540,
+    540
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000011",
+   "name": "Send Shipping Update",
+   "parameters": {
+    "emailType": "text",
+    "message": "={{ 'Hi ' + $json.customer_name.split(' ')[0] + ',\\n\\nGood news — order #' + $json.order_id + ' from ' + $json.config_store_name + ' has shipped and is on its way.\\n\\n' + ($json.tracking_number ? 'Tracking number: ' + $json.tracking_number + ($json.tracking_url ? '\\nTrack it here: ' + $json.tracking_url : '') + '\\n\\n' : 'Tracking details will follow from the courier.\\n\\n') + 'Questions about delivery? Reply to this email or contact us at ' + $json.config_support_email + '.\\n\\nThanks,\\n' + $json.config_store_name }}",
+    "options": {},
+    "sendTo": "={{ $json.customer_email }}",
+    "subject": "=Your order #{{ $json.order_id }} has shipped 📦"
+   },
+   "position": [
+    280,
+    20
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000012",
+   "name": "Hourly Cart Check",
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 1
+      }
+     ]
+    }
+   },
+   "position": [
+    -760,
+    740
+   ],
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000013",
+   "name": "CONFIG — Store (Flow B)",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "cfgb-store-name",
+       "name": "config_store_name",
+       "type": "string",
+       "value": "Your Store"
+      },
+      {
+       "id": "cfgb-support-email",
+       "name": "config_support_email",
+       "type": "string",
+       "value": "support@yourstore.com"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -500,
+    740
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000014",
+   "name": "Read Abandoned Carts",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "get",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Abandoned Carts"
+    }
+   },
+   "position": [
+    -240,
+    740
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "a9000000-0000-4000-8000-000000000015",
+   "name": "Keep Carts Due a Reminder",
+   "parameters": {
+    "jsCode": "// Keep only carts that are due a reminder:\n//   - Reminder Sent is still empty (never reminded before), AND\n//   - the cart's Timestamp is more than 1 hour old, AND\n//   - the row has a plausible email address.\n// If nothing is due, return [] and the workflow quietly stops —\n// no empty emails, no noise.\nconst ONE_HOUR_MS = 60 * 60 * 1000;\nconst cutoff = Date.now() - ONE_HOUR_MS;\nconst due = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  const reminded = String(j['Reminder Sent'] || '').trim();\n  if (reminded) continue;\n  const email = String(j['Email'] || '').trim();\n  if (!email.includes('@')) continue;\n  const ts = new Date(j['Timestamp']).getTime();\n  if (isNaN(ts) || ts > cutoff) continue;\n  due.push(item);\n}\nreturn due;",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    20,
+    740
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000016",
+   "name": "Send Cart Reminder",
+   "parameters": {
+    "emailType": "text",
+    "message": "Hi {{ $json['Customer Name'].split(' ')[0] }},\n\nYou left something in your basket at {{ $('CONFIG — Store (Flow B)').first().json.config_store_name }} — your cart ({{ $json['Cart Total'] }} {{ $json.Currency }}) is still saved, but we can't hold the items forever.\n\nPick up right where you left off:\n{{ $json['Checkout URL'] }}\n\nIf you hit a problem at checkout, reply to this email or write to {{ $('CONFIG — Store (Flow B)').first().json.config_support_email }} and we'll sort it out.\n\nNo longer interested? No hard feelings — just ignore this email and we won't chase this cart again.\n\n{{ $('CONFIG — Store (Flow B)').first().json.config_store_name }}",
+    "options": {},
+    "sendTo": "={{ $json.Email }}",
+    "subject": "=You left something behind at {{ $('CONFIG — Store (Flow B)').first().json.config_store_name }} 🛒"
+   },
+   "position": [
+    280,
+    740
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "a9000000-0000-4000-8000-000000000017",
+   "name": "Mark Reminder Sent",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [
+      "Email"
+     ],
+     "schema": [],
+     "value": {
+      "Email": "={{ $('Keep Carts Due a Reminder').item.json.Email }}",
+      "Reminder Sent": "={{ $now.toISO() }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "update",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Abandoned Carts"
+    }
+   },
+   "position": [
+    540,
+    740
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  }
+ ],
+ "connections": {
+  "Store Order Webhook": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Normalise Order",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Normalise Order": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "CONFIG — Edit Me",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "CONFIG — Edit Me": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Order Fulfilled?",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Order Fulfilled?": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Send Shipping Update",
+      "type": "main"
+     }
+    ],
+    [
+     {
+      "index": 0,
+      "node": "Save Order to Sheet",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Save Order to Sheet": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Send Order Confirmation",
+      "type": "main"
+     },
+     {
+      "index": 0,
+      "node": "Notify Owner — New Order",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Hourly Cart Check": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "CONFIG — Store (Flow B)",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "CONFIG — Store (Flow B)": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Read Abandoned Carts",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Read Abandoned Carts": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Keep Carts Due a Reminder",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Keep Carts Due a Reminder": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Send Cart Reminder",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Send Cart Reminder": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Mark Reminder Sent",
+      "type": "main"
+     }
+    ]
+   ]
+  }
+ },
+ "pinData": {},
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataErrorExecution": "all",
+  "saveDataSuccessExecution": "all"
+ },
+ "staticData": null
+}
