@@ -1,0 +1,526 @@
+{
+ "name": "RozContent — Job Applicant Screener",
+ "nodes": [
+  {
+   "id": "b9000000-0000-4000-8000-000000000001",
+   "name": "Sticky — Overview",
+   "parameters": {
+    "color": 4,
+    "content": "## 🎯 What this workflow does\n\nSomeone submits your job application form → the application is cleaned up and saved to a Google Sheet → AI scores it against the role criteria **you** wrote in CONFIG → the screening result is filed in a second tab → if the score meets your threshold, **you** (never the applicant) get a shortlist alert with the summary and portfolio link.\n\n**Follow the sticky notes in order: SETUP first, then test, then activate.**\n\nBuilt by RozContent — free template. Paid version adds a weekly shortlist digest, criteria tuning against your real hiring outcomes, duplicate-application detection and monitoring."
+   },
+   "position": [
+    -1060,
+    -180
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000002",
+   "name": "Sticky — Setup",
+   "parameters": {
+    "color": 5,
+    "content": "## 🛠️ SETUP — do these before activating\n\n1. **Google Sheet:** create a sheet with two tabs named exactly `Applications` and `Screening` (headers are in this template's README). Paste its ID into the two Google Sheets nodes (replace `PASTE_YOUR_GOOGLE_SHEET_ID`).\n2. **Credentials:** click each Google Sheets / Gmail node and connect YOUR Google account. Create an OpenAI Header Auth credential — Name: `Authorization`, Value: `Bearer YOUR_OPENAI_API_KEY` — and select it in the AI node.\n3. **CONFIG node:** set `config_owner_email`, `config_business_name`, your shortlist threshold, and — most importantly — honest, factual, job-related `config_role_criteria`. The README shows a good vs bad example. Read it before writing yours.\n4. **Test:** use the form's test URL with the two sample applications printed in the README — one strong, one weak — and check both sheet tabs and your inbox.\n5. **Go live:** flip the workflow to Active and share the form's Production URL wherever you advertise the role."
+   },
+   "position": [
+    -1060,
+    460
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000003",
+   "name": "Sticky — Production Notes",
+   "parameters": {
+    "color": 6,
+    "content": "## ⚠️ Production notes — fairness limits, read once\n\n- **The AI score is a first-pass sorting aid only.** It can be wrong, and it can reflect wording biases in how applications are written. It never makes a decision.\n- **A human makes every interview and rejection decision.** Read the actual application in the `Applications` tab before acting on any score.\n- **No email is ever sent to an applicant by this workflow** — no automatic rejections, ever. Only you get notified, and only about shortlisted applicants.\n- **Criteria must stay factual and job-related.** The AI is instructed to judge only evidence in the application — never age, gender, nationality, religion, appearance or anything not in the application. If you wouldn't defend a criterion to the applicant's face, don't put it in CONFIG.\n- **Comply with your local employment law.** You are responsible for how you use the scores and for how long you keep applicant data."
+   },
+   "position": [
+    1060,
+    430
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000004",
+   "name": "Application Form",
+   "parameters": {
+    "formTitle": "Job Application",
+    "formDescription": "Tell us about yourself and the role you are applying for. Every application is read by a human — this form simply makes sure nothing gets lost in an inbox.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Name",
+       "fieldType": "text",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Email",
+       "fieldType": "email",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Role Applying For",
+       "fieldType": "text",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Years of Experience",
+       "fieldType": "number",
+       "requiredField": false
+      },
+      {
+       "fieldLabel": "Portfolio or LinkedIn URL",
+       "fieldType": "text",
+       "requiredField": false
+      },
+      {
+       "fieldLabel": "Cover Note",
+       "fieldType": "textarea",
+       "requiredField": false
+      }
+     ]
+    },
+    "options": {},
+    "path": "apply"
+   },
+   "position": [
+    -760,
+    180
+   ],
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "webhookId": "rozcontent-job-application"
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000005",
+   "name": "Normalise Application",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "as-name",
+       "name": "applicant_name",
+       "type": "string",
+       "value": "={{ ($json['Name'] || '').trim() }}"
+      },
+      {
+       "id": "as-email",
+       "name": "email",
+       "type": "string",
+       "value": "={{ ($json['Email'] || '').trim().toLowerCase() }}"
+      },
+      {
+       "id": "as-role",
+       "name": "role",
+       "type": "string",
+       "value": "={{ ($json['Role Applying For'] || '').trim() }}"
+      },
+      {
+       "id": "as-years",
+       "name": "years_experience",
+       "type": "string",
+       "value": "={{ $json['Years of Experience'] !== undefined && $json['Years of Experience'] !== null ? $json['Years of Experience'] : '' }}"
+      },
+      {
+       "id": "as-portfolio",
+       "name": "portfolio_url",
+       "type": "string",
+       "value": "={{ ($json['Portfolio or LinkedIn URL'] || '').trim() }}"
+      },
+      {
+       "id": "as-cover",
+       "name": "cover_note",
+       "type": "string",
+       "value": "={{ ($json['Cover Note'] || '').trim() }}"
+      },
+      {
+       "id": "as-received",
+       "name": "received_at",
+       "type": "string",
+       "value": "={{ $now.toISO() }}"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -500,
+    180
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000006",
+   "name": "CONFIG — Edit Me",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "cfg-business-name",
+       "name": "config_business_name",
+       "type": "string",
+       "value": "Your Business"
+      },
+      {
+       "id": "cfg-owner-email",
+       "name": "config_owner_email",
+       "type": "string",
+       "value": "owner@yourbusiness.com"
+      },
+      {
+       "id": "cfg-role-criteria",
+       "name": "config_role_criteria",
+       "type": "string",
+       "value": "Describe what a strong applicant looks like for THIS role: the skills the work actually needs, the minimum relevant experience, evidence you want to see (e.g. a portfolio link), and any genuine deal-breakers. Factual and job-related only — see the good vs bad example in the README before writing this."
+      },
+      {
+       "id": "cfg-shortlist-threshold",
+       "name": "config_shortlist_threshold",
+       "type": "string",
+       "value": "7"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -240,
+    180
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b9000000-0000-4000-8000-000000000007",
+   "name": "Save Application",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Timestamp": "={{ $json.received_at }}",
+      "Name": "={{ $json.applicant_name }}",
+      "Email": "={{ $json.email }}",
+      "Role": "={{ $json.role }}",
+      "Experience (yrs)": "={{ $json.years_experience }}",
+      "Portfolio": "={{ $json.portfolio_url }}",
+      "Cover Note": "={{ $json.cover_note }}",
+      "Status": "New"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Applications"
+    }
+   },
+   "position": [
+    20,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "OpenAI API key — Header Auth (placeholder)"
+    }
+   },
+   "id": "b9000000-0000-4000-8000-000000000008",
+   "name": "AI — Screen the Application",
+   "onError": "continueErrorOutput",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.4, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are a hiring assistant for ' + $('CONFIG — Edit Me').first().json.config_business_name + '. You give a human hiring manager a first-pass sort of job applications — you never make the hiring decision. Score STRICTLY against the role criteria supplied in the user message and the evidence in the application itself. Judge ONLY job-related evidence in the application: never infer or score age, gender, nationality, religion, appearance, or anything that is not in the application. If evidence is missing, list it as a gap rather than guessing about the person. Always reply with ONLY a JSON object with the keys score (an integer from 1 to 10), verdict (one of shortlist, maybe, pass), summary (2 sentences), strengths (an array of strings) and gaps (an array of strings).' }, { role: 'user', content: 'Role criteria — what a strong applicant looks like:\\n' + $('CONFIG — Edit Me').first().json.config_role_criteria + '\\n\\nApplication:\\nName: ' + $('Normalise Application').first().json.applicant_name + '\\nRole applying for: ' + $('Normalise Application').first().json.role + '\\nYears of experience: ' + $('Normalise Application').first().json.years_experience + '\\nPortfolio or LinkedIn: ' + $('Normalise Application').first().json.portfolio_url + '\\nCover note: ' + $('Normalise Application').first().json.cover_note + '\\n\\nScore this application against the criteria above and return the JSON object.' } ] }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 60000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "https://api.openai.com/v1/chat/completions"
+   },
+   "position": [
+    280,
+    180
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "b9000000-0000-4000-8000-000000000009",
+   "name": "Alert — AI Step Failed",
+   "parameters": {
+    "emailType": "text",
+    "message": "An application arrived and was saved to the Applications sheet, but the AI screening step failed, so it has no score yet. Read it in the sheet and screen it manually — do not let it sit unscored.\n\nName: {{ $('Normalise Application').first().json.applicant_name }}\nEmail: {{ $('Normalise Application').first().json.email }}\nRole: {{ $('Normalise Application').first().json.role }}\nError: {{ $json.error.message }}\n\nCommon causes: an expired or out-of-credit OpenAI API key. Fix the key and re-run the screening by hand if needed.",
+    "options": {},
+    "sendTo": "={{ $('CONFIG — Edit Me').first().json.config_owner_email }}",
+    "subject": "⚠️ Applicant Screener: AI screening failed"
+   },
+   "position": [
+    540,
+    340
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000010",
+   "name": "Parse Screening",
+   "parameters": {
+    "jsCode": "// Safe parse of the AI screening reply. If the AI returns anything\n// unexpected, fall back to an explicit \"unscored\" result instead of\n// crashing — the application is already saved in the sheet either way,\n// and a human reads every application before any decision.\nlet parsed = null;\ntry {\n  const raw = $input.first().json.choices[0].message.content;\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = null;\n}\nif (!parsed || typeof parsed !== 'object') {\n  parsed = { score: 0, verdict: 'unscored', summary: 'AI screening failed — read the application in the sheet.', strengths: [], gaps: [] };\n}\nlet score = parseInt(parsed.score, 10);\nif (isNaN(score)) score = 0;\nscore = Math.max(0, Math.min(10, score));\nconst verdicts = ['shortlist', 'maybe', 'pass', 'unscored'];\nlet verdict = String(parsed.verdict || '').toLowerCase().trim();\nif (!verdicts.includes(verdict)) verdict = score === 0 ? 'unscored' : 'maybe';\nconst asList = (v) => Array.isArray(v) ? v.map(x => String(x)) : (v ? [String(v)] : []);\nreturn [{ json: {\n  score: score,\n  verdict: verdict,\n  summary: String(parsed.summary || ''),\n  strengths: asList(parsed.strengths),\n  gaps: asList(parsed.gaps)\n} }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    540,
+    180
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b9000000-0000-4000-8000-000000000011",
+   "name": "Save Screening Result",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Timestamp": "={{ $now.toISO() }}",
+      "Name": "={{ $('Normalise Application').first().json.applicant_name }}",
+      "Email": "={{ $('Normalise Application').first().json.email }}",
+      "Role": "={{ $('Normalise Application').first().json.role }}",
+      "Score": "={{ $json.score }}",
+      "Verdict": "={{ $json.verdict }}",
+      "Summary": "={{ $json.summary }}",
+      "Strengths": "={{ $json.strengths.join('; ') }}",
+      "Gaps": "={{ $json.gaps.join('; ') }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Screening"
+    }
+   },
+   "position": [
+    800,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "b9000000-0000-4000-8000-000000000012",
+   "name": "Shortlist Score?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-score-threshold",
+       "leftValue": "={{ $json.score }}",
+       "operator": {
+        "operation": "largerEqual",
+        "type": "number"
+       },
+       "rightValue": "={{ $('CONFIG — Edit Me').first().json.config_shortlist_threshold }}"
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    1060,
+    180
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "b9000000-0000-4000-8000-000000000013",
+   "name": "Notify Owner — Shortlisted Applicant",
+   "parameters": {
+    "emailType": "text",
+    "message": "An applicant just cleared your shortlist threshold. This is a sorting aid, not a decision — read the full application in the Applications tab before you act.\n\nName: {{ $('Normalise Application').first().json.applicant_name }}\nRole: {{ $('Normalise Application').first().json.role }}\nScore: {{ $json.score }}/10\nEmail: {{ $('Normalise Application').first().json.email }}\nPortfolio / LinkedIn: {{ $('Normalise Application').first().json.portfolio_url }}\n\nAI summary: {{ $json.summary }}\nStrengths: {{ $json.strengths.join('; ') }}\nGaps to probe if you interview: {{ $json.gaps.join('; ') }}\n\nYour move: open the portfolio, read the cover note yourself, then decide.",
+    "options": {},
+    "sendTo": "={{ $('CONFIG — Edit Me').first().json.config_owner_email }}",
+    "subject": "=⭐ Shortlist: {{ $('Normalise Application').first().json.applicant_name }} for {{ $('Normalise Application').first().json.role }} (score {{ $json.score }}/10)"
+   },
+   "position": [
+    1320,
+    20
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  }
+ ],
+ "connections": {
+  "Application Form": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Normalise Application",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Normalise Application": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "CONFIG — Edit Me",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "CONFIG — Edit Me": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Save Application",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Save Application": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "AI — Screen the Application",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "AI — Screen the Application": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Parse Screening",
+      "type": "main"
+     }
+    ],
+    [
+     {
+      "index": 0,
+      "node": "Alert — AI Step Failed",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Parse Screening": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Save Screening Result",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Save Screening Result": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Shortlist Score?",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Shortlist Score?": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Notify Owner — Shortlisted Applicant",
+      "type": "main"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ "pinData": {},
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataErrorExecution": "all",
+  "saveDataSuccessExecution": "all"
+ },
+ "staticData": null
+}
