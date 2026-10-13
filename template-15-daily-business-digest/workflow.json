@@ -1,0 +1,429 @@
+{
+ "name": "RozContent — Daily Business Digest",
+ "nodes": [
+  {
+   "id": "b6000000-0000-4000-8000-000000000001",
+   "name": "Sticky — Overview",
+   "parameters": {
+    "color": 4,
+    "content": "## 🎯 What this workflow does\n\nEvery morning at 07:30 it reads the four sheets the other RozContent templates keep for you — `Leads`, `Appointments`, `Invoices` and `Orders` — and emails you ONE plain-text digest: new leads from the last 24 hours, today's appointments, overdue invoices with the total outstanding, and yesterday's orders with revenue. If anything needs action (an overdue invoice, or appointments today) the subject line is flagged 🔔.\n\n**Follow the sticky notes in order: SETUP first, then test, then activate.**\n\nBuilt by RozContent — free template. The paid version adds a WhatsApp digest, charts and trends week-on-week, and one combined dashboard sheet kept up to date for you."
+   },
+   "position": [
+    -1060,
+    -180
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000002",
+   "name": "Sticky — Setup",
+   "parameters": {
+    "color": 5,
+    "content": "## 🛠️ SETUP — do these before activating\n\n1. **Point the four read nodes at YOUR sheets.** Each read node has its own sheet-ID field (`PASTE_YOUR_GOOGLE_SHEET_ID`) — the four tabs can live in one spreadsheet or four different ones. Tabs must be named exactly `Leads`, `Appointments`, `Invoices` and `Orders` (the README has the mapping table: which template creates which tab, with exact headers).\n2. **Credentials:** click each Google Sheets node (×4) and Gmail node (×2) and connect YOUR Google account. The placeholder credentials in this file are dummies — n8n will prompt you.\n3. **CONFIG node:** set `config_business_name`, `config_owner_email` (the digest goes there) and `config_currency` (the symbol shown before invoice amounts, e.g. `$`, `£`, `PKR `).\n4. **Timezone:** in the workflow's Settings (top-right ⋯ menu) set the timezone to YOUR business timezone — \"today\", \"yesterday\" and the 07:30 start all use it.\n5. **Missing a tab? Leave it.** Every read is set to continue on error — a sheet you don't use yet is simply skipped and its section reads as empty. See Production Notes.\n6. **Test** by executing the workflow manually (README) and checking the first digest against your sheets by hand before switching Active on."
+   },
+   "position": [
+    -1060,
+    460
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000003",
+   "name": "Sticky — Production Notes",
+   "parameters": {
+    "color": 6,
+    "content": "## ⚠️ Production notes (read once)\n\n- ⚠️ **How the four reads combine:** Google Sheets \"get\" nodes replace the items in the chain, they don't merge. So the four reads run in sequence and the single `Build the Digest` Code node pulls each one back by name — `$('Read Leads').all()`, `$('Read Appointments').all()` and so on. Don't rename the read nodes without updating that Code node.\n- ⚠️ **Any sheet you don't use yet is simply skipped.** All four reads use \"continue on error\" with the error output left unconnected, and the Code node treats a failed read as zero rows. Honest flip side: a tab that fails because of a typo'd name or a wrong sheet ID is ALSO skipped silently — check your first few digests against the sheets by hand.\n- ⚠️ **Garbage in, garbage out.** The digest is only as good as the sheets behind it. A lead with no Timestamp, an invoice never marked Paid, an appointment typed as `20/10/2026` — the digest cannot fix any of that.\n- ⚠️ **The money figures are simple sums, not accounting.** No partial payments, no refunds, no tax, and no currency conversion: order revenue is summed per currency symbol exactly as typed in the sheet.\n- ⚠️ Emails send from the Gmail account you connect. Use the inbox you actually read at breakfast."
+   },
+   "position": [
+    1580,
+    430
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000004",
+   "name": "Daily — 07:30",
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "daysInterval": 1,
+       "triggerAtHour": 7,
+       "triggerAtMinute": 30
+      }
+     ]
+    }
+   },
+   "position": [
+    -760,
+    180
+   ],
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000005",
+   "name": "CONFIG — Edit Me",
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "cfg-business-name",
+       "name": "config_business_name",
+       "type": "string",
+       "value": "Your Business"
+      },
+      {
+       "id": "cfg-owner-email",
+       "name": "config_owner_email",
+       "type": "string",
+       "value": "owner@yourbusiness.com"
+      },
+      {
+       "id": "cfg-currency",
+       "name": "config_currency",
+       "type": "string",
+       "value": "$"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "position": [
+    -500,
+    180
+   ],
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000006",
+   "name": "Read Leads",
+   "onError": "continueErrorOutput",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "get",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Leads"
+    }
+   },
+   "position": [
+    -240,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000007",
+   "name": "Read Appointments",
+   "onError": "continueErrorOutput",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "get",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Appointments"
+    }
+   },
+   "position": [
+    20,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000008",
+   "name": "Read Invoices",
+   "onError": "continueErrorOutput",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "get",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Invoices"
+    }
+   },
+   "position": [
+    280,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000009",
+   "name": "Read Orders",
+   "onError": "continueErrorOutput",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "get",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Orders"
+    }
+   },
+   "position": [
+    540,
+    180
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000010",
+   "name": "Build the Digest",
+   "parameters": {
+    "jsCode": "// Build ONE morning digest item from the four sheets read earlier in the chain.\n//\n// Why the $('Node Name').all() pattern? A Google Sheets \"get\" node REPLACES the\n// items flowing through the chain, so by the time we get here $input only holds\n// the LAST read (Orders). n8n lets a Code node reference any earlier node by\n// name, so each read is pulled back in full here. Every read sits behind a\n// try/catch: the four read nodes are set to \"continue on error\", so a sheet or\n// tab you do not use yet arrives as zero rows and its section is simply\n// skipped — a missing tab must never kill the whole digest.\nconst DAY_MS = 24 * 60 * 60 * 1000;\nfunction rows(name) {\n  try { return $(name).all().map(i => i.json); } catch (e) { return []; }\n}\nlet cfg = {};\ntry { cfg = $('CONFIG — Edit Me').first().json || {}; } catch (e) { cfg = {}; }\nconst business = cfg.config_business_name || 'Your Business';\nconst currency = cfg.config_currency || '$';\nconst now = Date.now();\nconst startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };\nconst todayStart = startOfDay(now);\nconst dayStr = (t) => { const d = new Date(t); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };\nconst todayStr = dayStr(now);\nconst yesterdayStr = dayStr(now - DAY_MS);\nconst money = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\\-]/g, '')); return isNaN(n) ? 0 : n; };\nconst fmt = (n) => (Math.round(n * 100) / 100).toLocaleString('en-US');\n\n// --- New leads in the last 24 hours (Template 1 `Leads` tab) ---\nconst leads = rows('Read Leads');\nconst newLeads = leads.filter(j => {\n  const ts = new Date(j['Timestamp']).getTime();\n  return !isNaN(ts) && ts > now - DAY_MS && ts <= now;\n});\n\n// --- Today's appointments (Template 4 `Appointments` tab) ---\nconst appointments = rows('Read Appointments');\nconst todays = appointments\n  .filter(j => String(j['Appointment Date'] || '').trim() === todayStr\n    && String(j['Status'] || '').trim().toLowerCase() !== 'cancelled')\n  .sort((a, b) => String(a['Appointment Time'] || '').localeCompare(String(b['Appointment Time'] || '')));\n\n// --- Overdue invoices (Template 6 `Invoices` tab) ---\n// Overdue = not Paid (Cancelled / Written off are also left out — they are not\n// money owed) and the Due Date is before today.\nconst invoices = rows('Read Invoices');\nconst overdue = invoices.filter(j => {\n  const status = String(j['Status'] || '').trim().toLowerCase();\n  if (status === 'paid' || status === 'cancelled' || status === 'written off') return false;\n  const due = new Date(j['Due Date']).getTime();\n  return !isNaN(due) && startOfDay(due) < todayStart;\n});\nconst overdueTotal = overdue.reduce((s, j) => s + money(j['Amount']), 0);\n\n// --- Yesterday's orders (Template 9 `Orders` tab) ---\n// Revenue is summed PER CURRENCY exactly as typed in the sheet — no conversion.\nconst orders = rows('Read Orders');\nconst yOrders = orders.filter(j => {\n  const raw = String(j['Timestamp'] || '').trim();\n  const ts = new Date(raw).getTime();\n  if (!isNaN(ts)) return dayStr(ts) === yesterdayStr;\n  return raw.slice(0, 10) === yesterdayStr;\n});\nconst revenueByCurrency = {};\nfor (const j of yOrders) {\n  const cur = String(j['Currency'] || currency).trim() || currency;\n  revenueByCurrency[cur] = (revenueByCurrency[cur] || 0) + money(j['Total']);\n}\nconst revenueText = Object.keys(revenueByCurrency).length\n  ? Object.entries(revenueByCurrency).map(([c, v]) => `${c}${fmt(v)}`).join(' + ')\n  : `${currency}0`;\n\n// --- Assemble the plain-text digest ---\nconst lines = [];\nlines.push(`Daily Business Digest — ${business}`);\nlines.push(todayStr);\nlines.push('');\nlines.push(`🆕 NEW LEADS (last 24 hours): ${newLeads.length}`);\nif (newLeads.length) {\n  for (const j of newLeads) lines.push(`- ${j['Name'] || 'Unnamed lead'} — ${j['Interest'] || 'General enquiry'}${j['Company'] ? ` (${j['Company']})` : ''}`);\n} else {\n  lines.push('All quiet — no new leads in the last 24 hours.');\n}\nlines.push('');\nlines.push(`📅 TODAY'S APPOINTMENTS: ${todays.length}`);\nif (todays.length) {\n  for (const j of todays) lines.push(`- ${j['Appointment Time'] || 'Time TBC'} — ${j['Client Name'] || 'Client'}${j['Service'] ? ` (${j['Service']})` : ''}`);\n} else {\n  lines.push('All quiet — no appointments in the diary today.');\n}\nlines.push('');\nlines.push(`⚠️ OVERDUE INVOICES: ${overdue.length} — ${currency}${fmt(overdueTotal)} outstanding`);\nif (overdue.length) {\n  for (const j of overdue) lines.push(`- ${j['Invoice Number'] || 'Invoice'} — ${j['Client Name'] || 'Client'} — ${currency}${fmt(money(j['Amount']))} (due ${j['Due Date']})`);\n} else {\n  lines.push('All quiet — no overdue invoices. Everyone has paid.');\n}\nlines.push('');\nlines.push(`🛒 YESTERDAY'S ORDERS: ${yOrders.length} — ${revenueText}`);\nif (yOrders.length) {\n  for (const j of yOrders) lines.push(`- #${j['Order ID'] || '?'} — ${j['Customer'] || 'Customer'} — ${String(j['Currency'] || currency)}${fmt(money(j['Total']))}`);\n} else {\n  lines.push('All quiet — no orders yesterday.');\n}\nlines.push('');\nlines.push('Figures come straight from your sheets — if a section looks wrong, check the sheet first.');\n\nconst hasUrgent = overdue.length > 0 || todays.length > 0;\nreturn [{ json: {\n  digest_text: lines.join('\\n'),\n  digest_date: todayStr,\n  has_urgent: hasUrgent,\n  new_leads_count: newLeads.length,\n  appointments_today: todays.length,\n  overdue_count: overdue.length,\n  overdue_total: Math.round(overdueTotal * 100) / 100,\n  orders_yesterday: yOrders.length,\n} }];\n",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    800,
+    180
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "b6000000-0000-4000-8000-000000000011",
+   "name": "Anything Urgent?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-has-urgent",
+       "leftValue": "={{ $json.has_urgent }}",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    1060,
+    180
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000012",
+   "name": "Send Digest — Action Needed",
+   "parameters": {
+    "emailType": "text",
+    "message": "={{ $json.digest_text }}",
+    "options": {},
+    "sendTo": "={{ $('CONFIG — Edit Me').first().json.config_owner_email }}",
+    "subject": "=🔔 Action needed — Daily Digest, {{ $('CONFIG — Edit Me').first().json.config_business_name }}: {{ $json.overdue_count }} overdue invoice(s), {{ $json.appointments_today }} appointment(s) today"
+   },
+   "position": [
+    1320,
+    20
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  },
+  {
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Gmail — your account (placeholder)"
+    }
+   },
+   "id": "b6000000-0000-4000-8000-000000000013",
+   "name": "Send Digest — Daily",
+   "parameters": {
+    "emailType": "text",
+    "message": "={{ $json.digest_text }}",
+    "options": {},
+    "sendTo": "={{ $('CONFIG — Edit Me').first().json.config_owner_email }}",
+    "subject": "=Daily Digest — {{ $('CONFIG — Edit Me').first().json.config_business_name }} ({{ $json.digest_date }})"
+   },
+   "position": [
+    1320,
+    340
+   ],
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1
+  }
+ ],
+ "connections": {
+  "Daily — 07:30": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "CONFIG — Edit Me",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "CONFIG — Edit Me": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Read Leads",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Read Leads": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Read Appointments",
+      "type": "main"
+     }
+    ],
+    []
+   ]
+  },
+  "Read Appointments": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Read Invoices",
+      "type": "main"
+     }
+    ],
+    []
+   ]
+  },
+  "Read Invoices": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Read Orders",
+      "type": "main"
+     }
+    ],
+    []
+   ]
+  },
+  "Read Orders": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Build the Digest",
+      "type": "main"
+     }
+    ],
+    []
+   ]
+  },
+  "Build the Digest": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Anything Urgent?",
+      "type": "main"
+     }
+    ]
+   ]
+  },
+  "Anything Urgent?": {
+   "main": [
+    [
+     {
+      "index": 0,
+      "node": "Send Digest — Action Needed",
+      "type": "main"
+     }
+    ],
+    [
+     {
+      "index": 0,
+      "node": "Send Digest — Daily",
+      "type": "main"
+     }
+    ]
+   ]
+  }
+ },
+ "pinData": {},
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataErrorExecution": "all",
+  "saveDataSuccessExecution": "all"
+ },
+ "staticData": null
+}
