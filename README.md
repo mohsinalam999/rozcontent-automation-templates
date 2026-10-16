@@ -4,10 +4,10 @@
 
 # RozContent Automation Templates
 
-**26 original [n8n](https://n8n.io) automations for small businesses — designed, built and supported by [RozContent](https://rozcontent.com).**
+**27 original [n8n](https://n8n.io) automations for small businesses — designed, built and supported by [RozContent](https://rozcontent.com).**
 
 ![Built on n8n](https://img.shields.io/badge/Built_on-n8n-070B14?style=flat-square&logo=n8n&logoColor=1FBE6B)
-![Templates](https://img.shields.io/badge/Templates-26-1FBE6B?style=flat-square)
+![Templates](https://img.shields.io/badge/Templates-27-1FBE6B?style=flat-square)
 ![Done-for-you installs](https://img.shields.io/badge/Installs-done--for--you-FFC24B?style=flat-square)
 
 Every template in this catalogue solves one named, everyday business pain: leads that go cold because nobody followed up in time, happy customers who are never asked for a review, invoices that drift unpaid because chasing them by hand is awkward, an inbox that decides your whole day, appointments lost to no-shows — and the newer ones: instant quotes, stock that runs out silently, recurring invoices re-typed every month.
@@ -21,6 +21,12 @@ This page is the catalogue — what each automation does, in plain words. **The 
 Not sure an automation fits your business? Ask us for a **free recorded demo**: we record any template running a task like yours, and send it with a one-page plan of what it would do in your business. No charge, no obligation — you judge the work, not a pitch.
 
 **[Watch demo videos of the templates →](https://rozcontent.com/services/automation)** · **[Ask for a free demo on WhatsApp →](https://wa.me/923124207507)**
+
+---
+
+## ⭐ Free template — #27 YouTube Channel Operator
+
+One template in this catalogue is **completely free — the real, complete file**, published in its folder: **[#27 YouTube Channel Operator](template-27-youtube-channel-operator/)**, a complete operator for one faceless YouTube channel (production on schedule, your chat approval before anything publishes, uploads, chat control, daily stats + comment drafts). Import it, connect your own accounts, and run it. If you'd rather not wire it up yourself, **RozContent will connect and install it on your own system for $100 one-time** — see the template's own guide.
 
 ---
 
@@ -64,6 +70,7 @@ Not sure an automation fits your business? Ask us for a **free recorded demo**: 
 | 24 | **Low-Stock Guardian** | Every morning, one email listing what's running low — product, stock left, suggested reorder quantity. Silence means everything is healthy | Small WooCommerce and Shopify sellers tired of discovering stockouts from customers |
 | 25 | **Booking Pipeline & Prep Brief** | Every Calendly booking becomes a tidy contact record, you get an instant alert — and one hour before each call, a prep brief: who they are, what they booked, their history with you | Consultants, coaches, clinics and agencies taking discovery calls |
 | 26 | **Recurring Invoice Sender** | On the 1st of the month it raises and emails every recurring invoice from your contracts sheet — correctly numbered, due dates worked out, every send logged, never double-billed. Pairs with #6 | Agencies, freelancers and studios living on retainers |
+| 27 | [YouTube Channel Operator](template-27-youtube-channel-operator/) — **FREE** | A complete operator for one faceless YouTube channel: on your upload days it takes the next topic from your queue (or drafts candidates for your approval), writes an original script, generates scene clips through a swappable video module (Google Flow by default), voices, renders, thumbnails and packages the video — then **waits for your chat approval** before anything publishes. You run it by talking to it ("is hafte upload roko", "stats batao"); a daily digest brings stats and comment drafts — never auto-posted. **Free template · RozContent installs it on your own system for $100 one-time** | Owners of small faceless channels who want the channel run like a system, with a human hand kept on the publish button |
 
 ---
 
