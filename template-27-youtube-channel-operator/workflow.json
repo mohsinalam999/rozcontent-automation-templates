@@ -195,6 +195,7 @@
    "typeVersion": 2.2
   },
   {
+   "alwaysOutputData": true,
    "id": "d2700000-0000-4000-8000-000000000012",
    "name": "Read Topics Queue",
    "parameters": {
@@ -224,6 +225,7 @@
    }
   },
   {
+   "alwaysOutputData": true,
    "id": "d2700000-0000-4000-8000-000000000013",
    "name": "Read Videos Log",
    "parameters": {
