@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360">
+  <defs>
+    <radialGradient id="glow" cx="82%" cy="12%" r="90%">
+      <stop offset="0%" stop-color="#0B1611"/>
+      <stop offset="55%" stop-color="#081009"/>
+      <stop offset="100%" stop-color="#070B14"/>
+    </radialGradient>
+    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.6" fill="#14281E"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="360" fill="url(#glow)"/>
+  <rect width="1280" height="360" fill="url(#dots)"/>
+  <!-- workflow node motif -->
+  <g stroke="#1C543A" stroke-width="3">
+    <line x1="800" y1="156" x2="930" y2="156"/>
+    <line x1="930" y1="156" x2="1060" y2="96"/>
+    <line x1="930" y1="156" x2="1060" y2="216"/>
+    <line x1="1060" y1="96" x2="1190" y2="156"/>
+    <line x1="1060" y1="216" x2="1190" y2="156"/>
+  </g>
+  <g fill="#1FBE6B">
+    <circle cx="865" cy="156" r="4"/><circle cx="995" cy="126" r="4"/>
+    <circle cx="995" cy="186" r="4"/><circle cx="1125" cy="126" r="4"/><circle cx="1125" cy="186" r="4"/>
+  </g>
+  <g>
+    <rect x="777" y="139" width="46" height="34" rx="9" fill="#0D2018" stroke="#1FBE6B" stroke-width="2"/>
+    <rect x="907" y="139" width="46" height="34" rx="9" fill="#0D2018" stroke="#166B44" stroke-width="2"/>
+    <rect x="1037" y="79" width="46" height="34" rx="9" fill="#0D2018" stroke="#166B44" stroke-width="2"/>
+    <rect x="1037" y="199" width="46" height="34" rx="9" fill="#0D2018" stroke="#166B44" stroke-width="2"/>
+    <rect x="1167" y="139" width="46" height="34" rx="9" fill="#102C1E" stroke="#1FBE6B" stroke-width="2"/>
+    <circle cx="800" cy="156" r="5" fill="#1FBE6B"/>
+    <circle cx="930" cy="156" r="5" fill="#1FBE6B"/>
+    <circle cx="1060" cy="96" r="5" fill="#1FBE6B"/>
+    <circle cx="1060" cy="216" r="5" fill="#1FBE6B"/>
+    <circle cx="1190" cy="156" r="5" fill="#FFC24B"/>
+  </g>
+  <!-- wordmark -->
+  <rect x="64" y="64" width="54" height="9" rx="4" fill="#1FBE6B"/>
+  <text x="62" y="182" font-family="Arial, Helvetica, sans-serif" font-size="94" font-weight="700" fill="#F6F3EC">RozContent</text>
+  <text x="66" y="230" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="5" fill="#1FBE6B">AUTOMATION TEMPLATES FOR SMALL BUSINESS</text>
+  <text x="64" y="284" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#CBD5E1">26 original n8n workflows — leads, reviews, invoicing, inboxes &amp; more</text>
+  <text x="64" y="326" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#FFC24B">rozcontent.com</text>
+</svg>
