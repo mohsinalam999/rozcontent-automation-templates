@@ -1,0 +1,2579 @@
+{
+ "name": "RozContent — YouTube Channel Operator (Flagship)",
+ "nodes": [
+  {
+   "id": "d2700000-0000-4000-8000-000000000001",
+   "name": "Sticky — Overview",
+   "parameters": {
+    "color": 4,
+    "content": "## 🎯 Template 27 — YouTube Channel Operator (flagship)\n\nA complete operator for ONE faceless YouTube channel — **your** channel, **your** accounts, **your** AI services. It runs on a rhythm you set in a Google Sheet:\n\n• **PRODUCTION (fixed time):** on your upload days it takes the next topic from your `Topics` queue (or brainstorms candidates for your approval when the queue runs dry), writes an ORIGINAL script, generates a clip per scene through the **Video Module (Google Flow by default — swappable)**, voices it, renders the finished video, builds the thumbnail and the full metadata pack, and parks the package in the `Ready` tab.\n• **APPROVAL GATE (default ON):** nothing uploads until you approve it in chat. Switch `approval_mode` to AUTO in the sheet only if you accept the risk — the README spells out the trade-off.\n• **UPLOAD (fixed time):** an hourly check publishes any approved package whose `Publish At` has arrived, sets the thumbnail, logs it in `Videos`, and sends you the live link in chat.\n• **CHAT CONTROL:** talk to it like an assistant — *\"kal ka topic badal do\"*, *\"is hafte upload roko\"*, *\"stats batao\"* — an AI agent reads and updates the same sheets and answers in chat.\n• **REPORTING:** a daily stats snapshot into `Stats`, new comments into `Comments` with a DRAFT reply beside each. **Drafts are never posted automatically — you approve and post every reply yourself.**\n\n**Follow the stickies: SETUP first, then test each branch, then activate.**"
+   },
+   "position": [
+    -1280,
+    -560
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000002",
+   "name": "Sticky — Setup",
+   "parameters": {
+    "color": 5,
+    "content": "## 🛠️ SETUP — do these before activating\n\n1. **Google Sheet:** one sheet, six tabs named exactly `Config`, `Topics`, `Ready`, `Videos`, `Stats`, `Comments` (headers + the full Config key list are in this template's README). Paste its ID into every Google Sheets node (replace `PASTE_YOUR_GOOGLE_SHEET_ID`).\n2. **Config tab:** fill the keys — niche, language, voice, upload days, publish time, `approval_mode` = **APPROVE** (recommended), your chat ID, and your four service endpoints (video module, TTS, images, render).\n3. **Credentials — all yours, all placeholders here:** Google (Sheets), OpenAI (scripts/metadata/agent), Telegram bot, YouTube OAuth (upload), plus header-auth keys for your video-module / TTS / image / render endpoints.\n4. **Chat agent tools:** the agent's three helper workflows (Read Sheets / Set Flags & Approvals / Manage Topics) are imported with the full package — paste their IDs into the three Tool nodes (README shows how), or let the paid install wire them.\n5. **Triggers:** production checks daily at 09:00 and the sheet's gate enforces your upload DAYS + pause flag; the upload check runs hourly. Set the two schedule triggers to your times (the sheet cannot move n8n's clocks — README explains).\n6. **Test branch by branch** with the README's worked test before switching Active on."
+   },
+   "position": [
+    -1280,
+    140
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000003",
+   "name": "Sticky — Video Module",
+   "parameters": {
+    "color": 3,
+    "content": "## 🎬 VIDEO MODULE — Google Flow by default. SWAPPABLE.\n\nThis boxed step is the ONLY place videos are generated. Everything before it hands in **scene prompts**; everything after it expects **clip URLs** back. The contract (full spec in the README):\n\n**IN (per scene):** `{ scene_number, prompt, narration, aspect_ratio, duration_seconds }`\n**OUT (per scene):** `{ scene_number, clip_url }`\n\nThe default plug is **Google Flow (Veo)** on the owner's own Flow account — point the node's URL at your Flow access route and connect your key. Flow is driven through its own interface/API surface as available to your account; your Flow plan and credits power it. Prefer another generator (or your own bridge)? Replace this ONE node's URL + credential — nothing else in the workflow changes."
+   },
+   "position": [
+    1980,
+    -300
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000004",
+   "name": "Sticky — Chat Control",
+   "parameters": {
+    "color": 3,
+    "content": "## 💬 CHAT CONTROL — talk to your channel\n\nMessage your Telegram bot the way you'd message an assistant. The AI agent reads the same sheets this workflow runs on and acts through its tools:\n\n• *\"kal ka topic badal do — kal savings par video banao\"* → swaps the queue\n• *\"is hafte upload roko\"* → sets `uploads_paused` = TRUE (production + upload both check it)\n• *\"dobara shuru karo\"* → resumes\n• *\"stats batao\"* → reads `Stats` / `Videos` and answers in chat\n• **APPROVE `VID-…`** / **REJECT `VID-…`** → the approval gate: only your explicit approval moves a package to the uploader\n\nHard rules baked into the agent: it never posts comment replies, never uploads anything itself, and asks one short question instead of guessing."
+   },
+   "position": [
+    -1280,
+    1180
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000005",
+   "name": "Sticky — Honest Limits",
+   "parameters": {
+    "color": 6,
+    "content": "## ⚠️ Honest limits (read once)\n\n- This template **orchestrates** AI services — it is not one. Script, voice, images, video generation and rendering all run on **your** accounts (OpenAI, Flow, TTS, image, render endpoint) and bill **you**. The render step is an HTTP call to an assembly endpoint because n8n does not edit video natively — the contract is in the README.\n- The format is the **faceless slideshow/voiceover** format (generated clips + voiceover + subtitles) unless your render endpoint does more.\n- **Approval mode is the safe default for a reason:** full-auto publishes whatever the pipeline produces, unreviewed — including the occasional bad title, wrong fact or off-brand frame. YouTube's reused-content and monetisation rules judge the channel, not the tool. Original scripts only; hooks and titles are deliberately varied (anti-template) — both are baked into the writing prompts.\n- Uploading sets the video's AI-disclosure as part of the metadata step — keep it on. Custom thumbnails need a channel eligible for them (YouTube's rules).\n- The sheet is always the manual override: any status you edit by hand is respected on the next run."
+   },
+   "position": [
+    2900,
+    1180
+   ],
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000006",
+   "name": "Production — Daily Check",
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "daysInterval": 1,
+       "triggerAtHour": 9,
+       "triggerAtMinute": 0
+      }
+     ]
+    }
+   },
+   "position": [
+    -980,
+    -60
+   ],
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000007",
+   "name": "Run Manually (Production)",
+   "parameters": {},
+   "position": [
+    -980,
+    180
+   ],
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000008",
+   "name": "Read Config",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Config"
+    }
+   },
+   "position": [
+    -720,
+    60
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000009",
+   "name": "CONFIG — Normalise",
+   "parameters": {
+    "jsCode": "// CONFIG — Normalise: the Config tab is Key | Value rows. Turn them into\n// one config object every later node in this branch can read, with safe\n// defaults for anything not filled in yet. The sheet drives everything:\n// niche, language, voice, upload days, publish time, approval mode and\n// the uploads_paused kill-switch the chat agent flips.\nlet rows = [];\ntry { rows = $input.all().map(i => i.json); } catch (e) { rows = []; }\nconst raw = {};\nfor (const r of rows) {\n  const k = String(r['Key'] || '').trim();\n  if (k) raw[k] = r['Value'] === undefined || r['Value'] === null ? '' : String(r['Value']).trim();\n}\nconst daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };\nconst uploadDays = String(raw.upload_days || 'Mon, Wed, Fri').split(',')\n  .map(s => daysMap[s.trim().toLowerCase().slice(0, 3)])\n  .filter(v => v !== undefined);\nconst cfg = {\n  config_channel_name: raw.channel_name || 'My Channel',\n  config_channel_id: raw.channel_id || '',\n  config_niche: raw.niche || '',\n  config_language: raw.language || 'English',\n  config_voice: raw.voice || 'default',\n  config_visual_style: raw.visual_style || 'clean flat vector illustration, consistent characters, no text in the image',\n  config_upload_days: uploadDays,\n  config_upload_days_raw: raw.upload_days || 'Mon, Wed, Fri',\n  config_publish_time: raw.publish_time || '18:00',\n  config_approval_mode: String(raw.approval_mode || 'APPROVE').toUpperCase() === 'AUTO' ? 'AUTO' : 'APPROVE',\n  config_uploads_paused: String(raw.uploads_paused || 'FALSE').toUpperCase() === 'TRUE',\n  config_owner_chat_id: raw.owner_chat_id || '',\n  config_aspect: raw.aspect_ratio || '16:9',\n  config_scene_seconds: parseInt(raw.scene_seconds, 10) || 6,\n  config_recent_days: parseInt(raw.digest_recent_days, 10) || 28,\n  config_max_digest_videos: parseInt(raw.digest_max_videos, 10) || 10,\n  config_flow_endpoint: raw.video_module_endpoint || '',\n  config_tts_endpoint: raw.tts_endpoint || '',\n  config_render_endpoint: raw.render_endpoint || '',\n  config_image_endpoint: raw.image_endpoint || ''\n};\nreturn [{ json: cfg }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    -460,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000010",
+   "name": "Schedule Gate",
+   "parameters": {
+    "jsCode": "// Schedule Gate — the sheet decides whether today is a production day.\n// uploads_paused = TRUE (the chat kill-switch) or a weekday outside\n// config_upload_days ends the run silently: returning [] means \"not\n// today\", exactly like the rest of the catalogue — silence is the answer.\nconst cfg = $input.first().json;\nif (cfg.config_uploads_paused) return [];\nconst today = new Date().getDay();\nif (Array.isArray(cfg.config_upload_days) && cfg.config_upload_days.length &&\n    !cfg.config_upload_days.includes(today)) return [];\nreturn [{ json: { ...cfg, proceed: true,\n  run_date: new Date().toISOString().slice(0, 10) } }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    -200,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000011",
+   "name": "Production Day?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ $json.proceed }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    60,
+    60
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000012",
+   "name": "Read Topics Queue",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Topics"
+    }
+   },
+   "position": [
+    320,
+    60
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000013",
+   "name": "Read Videos Log",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Videos"
+    }
+   },
+   "position": [
+    580,
+    60
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000014",
+   "name": "Pick Next Topic",
+   "parameters": {
+    "jsCode": "// Pick Next Topic — the first Topics row whose Status is Queued (or\n// blank) and whose Topic does NOT already appear in the Videos log.\n// That dedupe is what stops the channel repeating itself when the\n// queue is edited by hand or a run is repeated. No queued topic left?\n// Flag needs_brainstorm and let the brainstorm branch stock the queue\n// with candidates — candidates are never produced unapproved.\nlet topics = [];\ntry { topics = $('Read Topics Queue').all().map(i => i.json); } catch (e) { topics = []; }\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise').first().json; } catch (e) { cfg = {}; }\nconst videos = $input.all().map(i => i.json);\nconst used = new Set(videos.map(v => String(v['Topic'] || '').trim().toLowerCase()).filter(Boolean));\nconst next = topics.find(t => {\n  const title = String(t['Topic'] || '').trim();\n  const status = String(t['Status'] || '').trim().toLowerCase();\n  return title && (status === 'queued' || status === '') && !used.has(title.toLowerCase());\n});\nif (!next) return [{ json: { ...cfg, topic_found: false, needs_brainstorm: true } }];\nreturn [{ json: { ...cfg, topic_found: true, needs_brainstorm: false,\n  topic: String(next['Topic']).trim(), angle: String(next['Angle'] || '').trim() } }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    840,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000015",
+   "name": "Topic Found?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ $json.topic_found }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    1100,
+    60
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000016",
+   "name": "AI — Brainstorm Topics",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.8, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You brainstorm video topics for a faceless YouTube channel. Channel: ' + $json.config_channel_name + '. Niche: ' + $json.config_niche + '. Language of titles: ' + $json.config_language + '. Propose topics a small channel can realistically win with: specific, curiosity-led, and varied in shape — never ten versions of the same title. Reply with ONLY a JSON object: { topics: [ { topic, angle } ] } with exactly 5 topics.' }, { role: 'user', content: 'The planned topic queue is empty. Propose 5 fresh topics for this channel now.' } ] }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 60000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "https://api.openai.com/v1/chat/completions"
+   },
+   "position": [
+    1100,
+    340
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "OpenAI API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000017",
+   "name": "Save Brainstorm Candidates",
+   "parameters": {
+    "jsCode": "// Save Brainstorm Candidates — parse the model's JSON into Topics rows\n// stamped 'Candidate — needs approval'. They enter the queue ONLY when\n// the owner flips a row to Queued (in the sheet or by chat). A reply we\n// cannot parse still yields simple line-by-line candidates rather than\n// losing the run.\nlet content = '';\ntry { content = $input.first().json.choices[0].message.content || ''; } catch (e) { content = ''; }\nlet list = [];\ntry {\n  const parsed = JSON.parse(content);\n  if (Array.isArray(parsed.topics)) list = parsed.topics;\n} catch (e) {\n  list = content.split('\\n').map(s => s.replace(/^[-*0-9.)\\s]+/, '').trim())\n    .filter(Boolean).map(t => ({ topic: t, angle: '' }));\n}\nconst today = new Date().toISOString().slice(0, 10);\nreturn list.slice(0, 5).map(t => ({ json: {\n  'Topic': String(t.topic || '').trim(),\n  'Angle': String(t.angle || '').trim(),\n  'Status': 'Candidate — needs approval',\n  'Added': today\n} })).filter(r => r.json['Topic']);",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    1360,
+    340
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000018",
+   "name": "Append Candidates to Topics",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Topic": "={{ $json.Topic }}",
+      "Angle": "={{ $json.Angle }}",
+      "Status": "={{ $json.Status }}",
+      "Added": "={{ $json.Added }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Topics"
+    }
+   },
+   "position": [
+    1620,
+    340
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000019",
+   "name": "Notify — Topic Ideas Waiting",
+   "parameters": {
+    "chatId": "={{ $('CONFIG — Normalise').first().json.config_owner_chat_id }}",
+    "text": "={{ '💡 Your topic queue was empty, so I drafted ' + $input.all().length + ' topic ideas and saved them as candidates in the Topics tab. Approve the ones you like (set Status = Queued, or just tell me here) and production will pick them up on the next upload day.' }}",
+    "additionalFields": {}
+   },
+   "position": [
+    1880,
+    340
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000020",
+   "name": "AI — Write the Script",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.7, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You are the scriptwriter for ' + $json.config_channel_name + ', a faceless YouTube channel. Niche: ' + $json.config_niche + '. Write in ' + $json.config_language + '. Write an ORIGINAL script — never copy, translate or closely paraphrase any existing video. Open with a fresh hook and VARY the hook shape every video (question, mistake, myth, story, surprising number) — no two videos on this channel open the same way. Narration is spoken text only: no stage directions, no bracketed notes. Reply with ONLY a JSON object: { working_title, hook, scenes: [ { narration, visual_prompt } ] } with 6 to 10 scenes. Each narration is 1-3 spoken sentences (about ' + $json.config_scene_seconds + ' seconds). Each visual_prompt describes one vivid still or clip for an image/video generator, in this consistent style: ' + $json.config_visual_style + '. No text inside the images.' }, { role: 'user', content: 'Write the full script for this topic.\\nTopic: ' + $json.topic + '\\nAngle: ' + ($json.angle || 'the most useful angle for a beginner') } ] }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 60000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "https://api.openai.com/v1/chat/completions"
+   },
+   "position": [
+    1360,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "OpenAI API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000021",
+   "name": "Prepare Scenes for Video Module",
+   "parameters": {
+    "jsCode": "// Prepare Scenes for the Video Module — normalise the writer's JSON\n// into one module-ready item per scene: numbered, defaults filled,\n// empty scenes dropped. The Video Module receives EXACTLY these fields\n// per scene (its contract): scene_number, prompt, narration,\n// aspect_ratio, duration_seconds. Everything downstream of the module\n// expects clip URLs back in the same order.\nlet content = '';\ntry { content = $input.first().json.choices[0].message.content || ''; } catch (e) { content = ''; }\nlet parsed = {};\ntry { parsed = JSON.parse(content); } catch (e) { parsed = {}; }\nlet pick = {};\ntry { pick = $('Pick Next Topic').first().json; } catch (e) { pick = {}; }\nconst scenes = Array.isArray(parsed.scenes) ? parsed.scenes : [];\nconst clean = scenes\n  .map(s => ({\n    narration: String((s && s.narration) || '').trim(),\n    prompt: String((s && s.visual_prompt) || '').trim()\n  }))\n  .filter(s => s.narration && s.prompt)\n  .map((s, i) => ({ scene_number: i + 1, narration: s.narration, prompt: s.prompt }));\nconst scriptFull = clean.map(s => s.narration).join(' ');\nreturn clean.map(s => ({ json: {\n  ...s,\n  aspect_ratio: pick.config_aspect || '16:9',\n  duration_seconds: pick.config_scene_seconds || 6,\n  topic: pick.topic || '',\n  working_title: String(parsed.working_title || pick.topic || '').trim(),\n  hook: String(parsed.hook || '').trim(),\n  script_full: scriptFull,\n  scene_count: clean.length\n} }));",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    1620,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000022",
+   "name": "VIDEO MODULE — Generate Scene Clips (Google Flow)",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ scene_number: $json.scene_number, prompt: $json.prompt, narration: $json.narration, aspect_ratio: $json.aspect_ratio, duration_seconds: $json.duration_seconds }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 120000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "={{ $('CONFIG — Normalise').first().json.config_flow_endpoint }}"
+   },
+   "position": [
+    1880,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Video generation (Flow) API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000023",
+   "name": "Collect Scene Clips",
+   "parameters": {
+    "jsCode": "// Collect Scene Clips — gather the module's per-scene outputs back into\n// ONE production item, matched to the prepared scenes by scene_number.\n// Any scene without a clip_url marks the package failed: a video with a\n// silent gap is worse than no video, so the run stops and alerts.\nlet scenes = [];\ntry { scenes = $('Prepare Scenes for Video Module').all().map(i => i.json); } catch (e) { scenes = []; }\nconst outs = $input.all().map(i => i.json);\nconst byScene = {};\nfor (const o of outs) {\n  const n = o && o.scene_number !== undefined ? Number(o.scene_number) : null;\n  if (n !== null && o.clip_url) byScene[n] = String(o.clip_url);\n}\nconst clips = scenes.map(s => ({\n  scene_number: s.scene_number,\n  narration: s.narration,\n  clip_url: byScene[s.scene_number] || ''\n}));\nconst missing = clips.filter(c => !c.clip_url).map(c => c.scene_number);\nconst first = scenes[0] || {};\nreturn [{ json: {\n  topic: first.topic || '', working_title: first.working_title || '',\n  hook: first.hook || '', script_full: first.script_full || '',\n  scene_count: clips.length, clips: clips,\n  module_failed: missing.length > 0, missing_scenes: missing\n} }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    2140,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000024",
+   "name": "All Clips Ready?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ !$json.module_failed }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    2400,
+    60
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000025",
+   "name": "Generate Voiceover (TTS)",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ text: $json.script_full, voice: $('CONFIG — Normalise').first().json.config_voice, language: $('CONFIG — Normalise').first().json.config_language }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 120000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "={{ $('CONFIG — Normalise').first().json.config_tts_endpoint }}"
+   },
+   "position": [
+    2660,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "TTS API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000026",
+   "name": "Build Render Request",
+   "parameters": {
+    "jsCode": "// Build Render Request — assemble the render-endpoint payload exactly\n// per the documented contract: the module's clips in scene order, the\n// voiceover, and subtitles burned in from the narration text (so the\n// words on screen are the words spoken — never a separate transcript\n// that can drift). The endpoint returns { video_url }.\nlet prod = {};\ntry { prod = $('Collect Scene Clips').first().json; } catch (e) { prod = $input.first().json; }\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise').first().json; } catch (e) { cfg = {}; }\nconst audioUrl = ($input.first().json && $input.first().json.audio_url) || '';\nconst slug = String(prod.topic || 'video').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);\nconst renderRequest = {\n  render_key: slug + '-' + new Date().toISOString().slice(0, 10),\n  clips: (prod.clips || []).map(c => ({ scene: c.scene_number, url: c.clip_url, narration: c.narration })),\n  audio_url: audioUrl,\n  subtitles: { burn_in: true, source: 'narration', language: cfg.config_language || 'English' },\n  aspect_ratio: cfg.config_aspect || '16:9',\n  format: 'mp4'\n};\nreturn [{ json: { render_request: renderRequest, topic: prod.topic || '',\n  working_title: prod.working_title || '', script_full: prod.script_full || '' } }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    2920,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000027",
+   "name": "Render Video (Assembly Endpoint)",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify($json.render_request) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 300000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "={{ $('CONFIG — Normalise').first().json.config_render_endpoint }}"
+   },
+   "position": [
+    3180,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Render endpoint key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000028",
+   "name": "AI — Metadata Pack",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.6, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: 'You package finished videos for YouTube. Channel: ' + $('Pick Next Topic').first().json.config_channel_name + '. The title must be compelling AND true to the video — curiosity is welcome, a title the video does not deliver is not. Reply with ONLY a JSON object: { title, description, tags, chapters }. title: max 70 characters. description: 3-5 short lines a viewer would actually read, ending with one line inviting a comment. tags: an array of 10-14 search phrases viewers really type. chapters: a plain string, one line per chapter as MM:SS Title, starting at 00:00.' }, { role: 'user', content: 'Topic: ' + $('Pick Next Topic').first().json.topic + '\\nWorking title: ' + $json.working_title + '\\nScript (for accuracy): ' + $json.script_full } ] }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 60000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "https://api.openai.com/v1/chat/completions"
+   },
+   "position": [
+    3440,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "OpenAI API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000029",
+   "name": "Parse Metadata",
+   "parameters": {
+    "jsCode": "// Parse Metadata — pull the pack out of the model's JSON and merge it\n// with the render result. Chapters fall back to scene-based timestamps\n// (scene length x position, titled from each scene's first words) when\n// the model returns none, so a package never ships without chapters.\nlet content = '';\ntry { content = $input.first().json.choices[0].message.content || ''; } catch (e) { content = ''; }\nlet meta = {};\ntry { meta = JSON.parse(content); } catch (e) { meta = {}; }\nlet render = {};\ntry { render = $('Render Video (Assembly Endpoint)').first().json; } catch (e) { render = {}; }\nlet build = {};\ntry { build = $('Build Render Request').first().json; } catch (e) { build = {}; }\nlet chapters = String(meta.chapters || '').trim();\nif (!chapters) {\n  let scenes = [];\n  try { scenes = $('Prepare Scenes for Video Module').all().map(i => i.json); } catch (e) { scenes = []; }\n  let pick = {};\n  try { pick = $('CONFIG — Normalise').first().json; } catch (e) { pick = {}; }\n  const per = pick.config_scene_seconds || 6;\n  chapters = scenes.map((s, i) => {\n    const t = i * per;\n    const mm = String(Math.floor(t / 60)).padStart(2, '0');\n    const ss = String(t % 60).padStart(2, '0');\n    const label = String(s.narration || '').split(' ').slice(0, 4).join(' ') || ('Part ' + (i + 1));\n    return mm + ':' + ss + ' ' + label;\n  }).join('\\n');\n}\nconst tags = Array.isArray(meta.tags) ? meta.tags.join(', ') : String(meta.tags || '');\nreturn [{ json: {\n  title: String(meta.title || build.working_title || '').trim(),\n  description: String(meta.description || '').trim(),\n  tags: tags, chapters: chapters,\n  video_url: String(render.video_url || ''),\n  duration_seconds: render.duration_seconds || '',\n  topic: build.topic || '', working_title: build.working_title || '',\n  script_full: build.script_full || ''\n} }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    3700,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000030",
+   "name": "Generate Thumbnail",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "json",
+    "genericAuthType": "httpHeaderAuth",
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Content-Type",
+       "value": "application/json"
+      }
+     ]
+    },
+    "jsonBody": "={{ JSON.stringify({ prompt: 'YouTube thumbnail, bold and uncluttered, one strong subject, high contrast, with the exact title text rendered large: \\\"' + $json.title + '\\\" — topic: ' + $json.topic, aspect_ratio: '16:9' }) }}",
+    "method": "POST",
+    "options": {
+     "timeout": 120000
+    },
+    "sendBody": true,
+    "sendHeaders": true,
+    "specifyBody": "json",
+    "url": "={{ $('CONFIG — Normalise').first().json.config_image_endpoint }}"
+   },
+   "position": [
+    3960,
+    60
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Image generation API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000031",
+   "name": "Finalise Package",
+   "parameters": {
+    "jsCode": "// Finalise Package — merge the thumbnail with the metadata, mint the\n// Package ID the owner will approve by, work out Publish At (today at\n// config_publish_time; if that moment has passed, the next upload day\n// at that time), and set the Status from the approval mode:\n// APPROVE -> AWAITING_APPROVAL (the uploader will not touch it),\n// AUTO -> READY (the uploader may publish it at Publish At).\nlet meta = {};\ntry { meta = $('Parse Metadata').first().json; } catch (e) { meta = {}; }\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise').first().json; } catch (e) { cfg = {}; }\nconst thumb = ($input.first().json && $input.first().json.image_url) || '';\nconst now = new Date();\nconst pad = n => String(n).padStart(2, '0');\nconst stamp = d => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());\nconst packageId = 'VID-' + stamp(now) + '-' + Math.floor(10 + Math.random() * 89);\nconst parts = String(cfg.config_publish_time || '18:00').split(':');\nconst hh = parseInt(parts[0], 10) || 18, mm = parseInt(parts[1], 10) || 0;\nconst days = Array.isArray(cfg.config_upload_days) && cfg.config_upload_days.length\n  ? cfg.config_upload_days : [now.getDay()];\nlet publish = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm);\nfor (let add = 0; add < 8; add++) {\n  const cand = new Date(now.getFullYear(), now.getMonth(), now.getDate() + add, hh, mm);\n  if (cand > now && days.includes(cand.getDay())) { publish = cand; break; }\n  publish = cand;\n}\nconst fmtDT = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +\n  ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());\nconst approvalRequired = cfg.config_approval_mode !== 'AUTO';\nconst status = approvalRequired ? 'AWAITING_APPROVAL' : 'READY';\nconst approvalMsg = [\n  '🎬 New video ready for your approval — ' + packageId,\n  'Title: ' + meta.title,\n  'Publishes: ' + fmtDT(publish) + ' (once approved)',\n  'Preview: ' + meta.video_url,\n  'Thumbnail: ' + thumb,\n  '',\n  'Reply APPROVE ' + packageId + ' to publish, or REJECT ' + packageId + ' to bin it.'\n].join('\\n');\nconst autoMsg = '🎬 New video packaged (' + packageId + '): \"' + meta.title + '\" — ' +\n  'approval mode is AUTO, so it publishes at ' + fmtDT(publish) + '. Preview: ' + meta.video_url;\nreturn [{ json: {\n  'Package ID': packageId, 'Topic': meta.topic || '', 'Title': meta.title || '',\n  'Description': meta.description || '', 'Tags': meta.tags || '',\n  'Chapters': meta.chapters || '', 'Video URL': meta.video_url || '',\n  'Thumbnail URL': thumb, 'Publish At': fmtDT(publish), 'Status': status,\n  'YouTube URL': '', 'Created At': fmtDT(now),\n  approval_required: approvalRequired, approval_message: approvalMsg,\n  auto_message: autoMsg,\n  config_owner_chat_id: cfg.config_owner_chat_id || ''\n} }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    4220,
+    60
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000032",
+   "name": "Save Package to Ready",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Package ID": "={{ $json['Package ID'] }}",
+      "Topic": "={{ $json.Topic }}",
+      "Title": "={{ $json.Title }}",
+      "Description": "={{ $json.Description }}",
+      "Tags": "={{ $json.Tags }}",
+      "Chapters": "={{ $json.Chapters }}",
+      "Video URL": "={{ $json['Video URL'] }}",
+      "Thumbnail URL": "={{ $json['Thumbnail URL'] }}",
+      "Publish At": "={{ $json['Publish At'] }}",
+      "Status": "={{ $json.Status }}",
+      "YouTube URL": "={{ $json['YouTube URL'] }}",
+      "Created At": "={{ $json['Created At'] }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Ready"
+    }
+   },
+   "position": [
+    4480,
+    60
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000033",
+   "name": "Approval Required?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ $json.approval_required }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    4740,
+    60
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000034",
+   "name": "Send Approval Request",
+   "parameters": {
+    "chatId": "={{ $('Finalise Package').first().json.config_owner_chat_id }}",
+    "text": "={{ $('Finalise Package').first().json.approval_message }}",
+    "additionalFields": {}
+   },
+   "position": [
+    5000,
+    -40
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000035",
+   "name": "Notify — Auto-Publish Scheduled",
+   "parameters": {
+    "chatId": "={{ $('Finalise Package').first().json.config_owner_chat_id }}",
+    "text": "={{ $('Finalise Package').first().json.auto_message }}",
+    "additionalFields": {}
+   },
+   "position": [
+    5000,
+    180
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000036",
+   "name": "Alert — Production Service Failed",
+   "parameters": {
+    "chatId": "={{ $('CONFIG — Normalise').first().json.config_owner_chat_id }}",
+    "text": "⚠️ A production service step failed (script, video module, voice, render, metadata or thumbnail) — check the last execution in n8n. No package was queued from that run.",
+    "additionalFields": {}
+   },
+   "position": [
+    2400,
+    460
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000037",
+   "name": "Upload Check — Hourly",
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 1
+      }
+     ]
+    }
+   },
+   "position": [
+    -980,
+    780
+   ],
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000038",
+   "name": "Read Config (Upload)",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Config"
+    }
+   },
+   "position": [
+    -720,
+    780
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000039",
+   "name": "CONFIG — Normalise (Upload)",
+   "parameters": {
+    "jsCode": "// CONFIG — Normalise: the Config tab is Key | Value rows. Turn them into\n// one config object every later node in this branch can read, with safe\n// defaults for anything not filled in yet. The sheet drives everything:\n// niche, language, voice, upload days, publish time, approval mode and\n// the uploads_paused kill-switch the chat agent flips.\nlet rows = [];\ntry { rows = $input.all().map(i => i.json); } catch (e) { rows = []; }\nconst raw = {};\nfor (const r of rows) {\n  const k = String(r['Key'] || '').trim();\n  if (k) raw[k] = r['Value'] === undefined || r['Value'] === null ? '' : String(r['Value']).trim();\n}\nconst daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };\nconst uploadDays = String(raw.upload_days || 'Mon, Wed, Fri').split(',')\n  .map(s => daysMap[s.trim().toLowerCase().slice(0, 3)])\n  .filter(v => v !== undefined);\nconst cfg = {\n  config_channel_name: raw.channel_name || 'My Channel',\n  config_channel_id: raw.channel_id || '',\n  config_niche: raw.niche || '',\n  config_language: raw.language || 'English',\n  config_voice: raw.voice || 'default',\n  config_visual_style: raw.visual_style || 'clean flat vector illustration, consistent characters, no text in the image',\n  config_upload_days: uploadDays,\n  config_upload_days_raw: raw.upload_days || 'Mon, Wed, Fri',\n  config_publish_time: raw.publish_time || '18:00',\n  config_approval_mode: String(raw.approval_mode || 'APPROVE').toUpperCase() === 'AUTO' ? 'AUTO' : 'APPROVE',\n  config_uploads_paused: String(raw.uploads_paused || 'FALSE').toUpperCase() === 'TRUE',\n  config_owner_chat_id: raw.owner_chat_id || '',\n  config_aspect: raw.aspect_ratio || '16:9',\n  config_scene_seconds: parseInt(raw.scene_seconds, 10) || 6,\n  config_recent_days: parseInt(raw.digest_recent_days, 10) || 28,\n  config_max_digest_videos: parseInt(raw.digest_max_videos, 10) || 10,\n  config_flow_endpoint: raw.video_module_endpoint || '',\n  config_tts_endpoint: raw.tts_endpoint || '',\n  config_render_endpoint: raw.render_endpoint || '',\n  config_image_endpoint: raw.image_endpoint || ''\n};\nreturn [{ json: cfg }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    -460,
+    780
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000040",
+   "name": "Read Ready Tab",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Ready"
+    }
+   },
+   "position": [
+    -200,
+    780
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000041",
+   "name": "Pick Due Video",
+   "parameters": {
+    "jsCode": "// Pick Due Video — the uploader's whole discipline in one place:\n//  - uploads_paused = TRUE stops everything (the chat kill-switch)\n//  - only APPROVED (human said yes) or READY (AUTO mode) packages\n//  - only when Publish At has actually arrived\n//  - ONE video per run, earliest first — never a burst\n// Nothing due = [] and the run is silent.\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise (Upload)').first().json; } catch (e) { cfg = {}; }\nif (cfg.config_uploads_paused) return [];\nconst rows = $input.all().map(i => i.json);\nconst now = new Date();\nconst due = rows\n  .filter(r => ['APPROVED', 'READY'].includes(String(r['Status'] || '').toUpperCase()))\n  .map(r => ({ r: r, t: new Date(String(r['Publish At'] || '').replace(' ', 'T')) }))\n  .filter(x => !isNaN(x.t) && x.t <= now)\n  .sort((a, b) => a.t - b.t)[0];\nif (!due) return [];\nconst r = due.r;\nreturn [{ json: { ...r,\n  package_id: r['Package ID'] || '', topic: r['Topic'] || '',\n  title: r['Title'] || '', description: r['Description'] || '',\n  tags: r['Tags'] || '', video_url: r['Video URL'] || '',\n  thumbnail_url: r['Thumbnail URL'] || '', publish_at: r['Publish At'] || '',\n  due: true } }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    60,
+    780
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000042",
+   "name": "Due for Publish?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ $json.due }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    320,
+    780
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000043",
+   "name": "Download Rendered Video",
+   "parameters": {
+    "method": "GET",
+    "options": {
+     "response": {
+      "responseFormat": "file"
+     },
+     "timeout": 300000
+    },
+    "url": "={{ $json.video_url }}"
+   },
+   "position": [
+    580,
+    780
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000044",
+   "name": "Upload to YouTube",
+   "parameters": {
+    "resource": "video",
+    "operation": "upload",
+    "title": "={{ $('Pick Due Video').item.json.title }}",
+    "description": "={{ $('Pick Due Video').item.json.description }}",
+    "tags": "={{ $('Pick Due Video').item.json.tags }}",
+    "categoryId": "27",
+    "privacyStatus": "public",
+    "notifySubscribers": true
+   },
+   "position": [
+    840,
+    780
+   ],
+   "type": "n8n-nodes-base.youTube",
+   "typeVersion": 1,
+   "credentials": {
+    "youTubeOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "YouTube — your channel account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000045",
+   "name": "Download Thumbnail",
+   "parameters": {
+    "method": "GET",
+    "options": {
+     "response": {
+      "responseFormat": "file"
+     },
+     "timeout": 60000
+    },
+    "url": "={{ $('Pick Due Video').item.json.thumbnail_url }}"
+   },
+   "position": [
+    1100,
+    780
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000046",
+   "name": "Set Custom Thumbnail",
+   "parameters": {
+    "authentication": "generic",
+    "contentType": "binaryData",
+    "genericAuthType": "httpHeaderAuth",
+    "inputDataField": "data",
+    "method": "POST",
+    "options": {
+     "timeout": 60000
+    },
+    "queryParameters": {
+     "parameters": [
+      {
+       "name": "videoId",
+       "value": "={{ $('Upload to YouTube').item.json.id }}"
+      }
+     ]
+    },
+    "sendBody": true,
+    "sendQuery": true,
+    "url": "https://www.googleapis.com/youtube/v3/thumbnails/set"
+   },
+   "position": [
+    1360,
+    780
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "YouTube OAuth2 — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000047",
+   "name": "Log to Videos",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Video ID": "={{ $('Upload to YouTube').item.json.id }}",
+      "Topic": "={{ $('Pick Due Video').item.json.topic }}",
+      "Title": "={{ $('Pick Due Video').item.json.title }}",
+      "YouTube URL": "={{ 'https://www.youtube.com/watch?v=' + $('Upload to YouTube').item.json.id }}",
+      "Published At": "={{ $now.toISO() }}",
+      "Source Package": "={{ $('Pick Due Video').item.json.package_id }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Videos"
+    }
+   },
+   "position": [
+    1620,
+    780
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000048",
+   "name": "Mark Package Uploaded",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [
+      "Package ID"
+     ],
+     "schema": [],
+     "value": {
+      "Package ID": "={{ $('Pick Due Video').item.json['Package ID'] }}",
+      "Topic": "={{ $('Pick Due Video').item.json.Topic }}",
+      "Title": "={{ $('Pick Due Video').item.json.Title }}",
+      "Description": "={{ $('Pick Due Video').item.json.Description }}",
+      "Tags": "={{ $('Pick Due Video').item.json['Tags'] }}",
+      "Chapters": "={{ $('Pick Due Video').item.json.Chapters }}",
+      "Video URL": "={{ $('Pick Due Video').item.json['Video URL'] }}",
+      "Thumbnail URL": "={{ $('Pick Due Video').item.json['Thumbnail URL'] }}",
+      "Publish At": "={{ $('Pick Due Video').item.json['Publish At'] }}",
+      "Status": "UPLOADED",
+      "YouTube URL": "={{ 'https://www.youtube.com/watch?v=' + $('Upload to YouTube').item.json.id }}",
+      "Created At": "={{ $('Pick Due Video').item.json['Created At'] }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "update",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Ready"
+    }
+   },
+   "position": [
+    1880,
+    780
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000049",
+   "name": "Notify — Published",
+   "parameters": {
+    "chatId": "={{ $('CONFIG — Normalise (Upload)').first().json.config_owner_chat_id }}",
+    "text": "={{ '✅ Published: ' + $('Pick Due Video').first().json.title + '\\nhttps://www.youtube.com/watch?v=' + $('Upload to YouTube').item.json.id }}",
+    "additionalFields": {}
+   },
+   "position": [
+    2140,
+    780
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000050",
+   "name": "Telegram Trigger",
+   "parameters": {
+    "updates": [
+     "message"
+    ],
+    "additionalFields": {}
+   },
+   "position": [
+    -980,
+    1300
+   ],
+   "type": "n8n-nodes-base.telegramTrigger",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000051",
+   "name": "Channel Operator (AI Agent)",
+   "parameters": {
+    "promptType": "define",
+    "text": "={{ $json.message.text }}",
+    "options": {
+     "systemMessage": "You are the operator assistant for the owner's YouTube channel. The owner talks to you in chat, casually and sometimes in Roman Urdu or Hinglish — understand them and reply in the owner's own language and style, briefly and clearly.\n\nYour hands are three tools that read and update the channel's Google Sheets:\n- Read Channel Sheets: Config, Topics, Ready, Videos, Stats, Comments — read before you answer questions or act.\n- Set Flags and Approvals: set uploads_paused TRUE/FALSE (pause/resume uploads), set approval_mode APPROVE/AUTO (only when the owner explicitly asks), and set a Ready package's Status to APPROVED or REJECTED — only on the owner's explicit approval or rejection of that package.\n- Manage Topics Queue: add a topic, change a queued topic, or mark a brainstormed candidate as Queued (approved).\n\nTypical requests: 'kal ka topic badal do' (change tomorrow's topic), 'is hafte upload roko' (pause uploads), 'dobara shuru karo' (resume), 'stats batao' (report the latest numbers from Stats and Videos).\n\nHARD RULES: 1) Never post or send a comment reply yourself — comment replies exist only as drafts for the owner. 2) Never upload or publish anything yourself — publishing happens only through the schedule, after approval. 3) Approval means the owner's explicit word for that package (they will usually quote its Package ID, e.g. APPROVE VID-20261016-42). 4) If you cannot tell exactly which topic or package the owner means, ask ONE short question instead of guessing. 5) After acting, confirm in one line what changed."
+    }
+   },
+   "position": [
+    -460,
+    1300
+   ],
+   "type": "@n8n/n8n-nodes-langchain.agent",
+   "typeVersion": 1.7
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000052",
+   "name": "OpenAI Chat Model",
+   "parameters": {
+    "model": "gpt-4o-mini",
+    "options": {}
+   },
+   "position": [
+    -700,
+    1520
+   ],
+   "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+   "typeVersion": 1.2,
+   "credentials": {
+    "openAiApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "OpenAI API — your key (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000053",
+   "name": "Chat Memory",
+   "parameters": {
+    "contextWindowLength": 10
+   },
+   "position": [
+    -460,
+    1520
+   ],
+   "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+   "typeVersion": 1.3
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000054",
+   "name": "Tool — Read Channel Sheets",
+   "parameters": {
+    "name": "read_channel_sheets",
+    "description": "Read the channel's Google Sheets (Config, Topics, Ready, Videos, Stats, Comments) and return their current rows. Use before answering questions and before any change.",
+    "workflowId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_HELPER_WORKFLOW_ID"
+    }
+   },
+   "position": [
+    -220,
+    1520
+   ],
+   "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+   "typeVersion": 1.1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000055",
+   "name": "Tool — Set Flags & Approvals",
+   "parameters": {
+    "name": "set_flags_and_approvals",
+    "description": "Update control flags in the Config tab (uploads_paused, approval_mode) or set a Ready package's Status to APPROVED or REJECTED by its Package ID. Use only on the owner's explicit instruction.",
+    "workflowId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_HELPER_WORKFLOW_ID"
+    }
+   },
+   "position": [
+    20,
+    1520
+   ],
+   "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+   "typeVersion": 1.1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000056",
+   "name": "Tool — Manage Topics Queue",
+   "parameters": {
+    "name": "manage_topics_queue",
+    "description": "Add a topic to the Topics queue, replace a queued topic, or mark a candidate topic as Queued (approved for production).",
+    "workflowId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_HELPER_WORKFLOW_ID"
+    }
+   },
+   "position": [
+    260,
+    1520
+   ],
+   "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+   "typeVersion": 1.1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000057",
+   "name": "Send Chat Reply",
+   "parameters": {
+    "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+    "text": "={{ $json.output }}",
+    "additionalFields": {}
+   },
+   "position": [
+    60,
+    1300
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000058",
+   "name": "Daily Digest — 08:00",
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "daysInterval": 1,
+       "triggerAtHour": 8,
+       "triggerAtMinute": 0
+      }
+     ]
+    }
+   },
+   "position": [
+    -980,
+    1880
+   ],
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000059",
+   "name": "Read Config (Reporting)",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Config"
+    }
+   },
+   "position": [
+    -720,
+    1880
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000060",
+   "name": "CONFIG — Normalise (Reporting)",
+   "parameters": {
+    "jsCode": "// CONFIG — Normalise: the Config tab is Key | Value rows. Turn them into\n// one config object every later node in this branch can read, with safe\n// defaults for anything not filled in yet. The sheet drives everything:\n// niche, language, voice, upload days, publish time, approval mode and\n// the uploads_paused kill-switch the chat agent flips.\nlet rows = [];\ntry { rows = $input.all().map(i => i.json); } catch (e) { rows = []; }\nconst raw = {};\nfor (const r of rows) {\n  const k = String(r['Key'] || '').trim();\n  if (k) raw[k] = r['Value'] === undefined || r['Value'] === null ? '' : String(r['Value']).trim();\n}\nconst daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };\nconst uploadDays = String(raw.upload_days || 'Mon, Wed, Fri').split(',')\n  .map(s => daysMap[s.trim().toLowerCase().slice(0, 3)])\n  .filter(v => v !== undefined);\nconst cfg = {\n  config_channel_name: raw.channel_name || 'My Channel',\n  config_channel_id: raw.channel_id || '',\n  config_niche: raw.niche || '',\n  config_language: raw.language || 'English',\n  config_voice: raw.voice || 'default',\n  config_visual_style: raw.visual_style || 'clean flat vector illustration, consistent characters, no text in the image',\n  config_upload_days: uploadDays,\n  config_upload_days_raw: raw.upload_days || 'Mon, Wed, Fri',\n  config_publish_time: raw.publish_time || '18:00',\n  config_approval_mode: String(raw.approval_mode || 'APPROVE').toUpperCase() === 'AUTO' ? 'AUTO' : 'APPROVE',\n  config_uploads_paused: String(raw.uploads_paused || 'FALSE').toUpperCase() === 'TRUE',\n  config_owner_chat_id: raw.owner_chat_id || '',\n  config_aspect: raw.aspect_ratio || '16:9',\n  config_scene_seconds: parseInt(raw.scene_seconds, 10) || 6,\n  config_recent_days: parseInt(raw.digest_recent_days, 10) || 28,\n  config_max_digest_videos: parseInt(raw.digest_max_videos, 10) || 10,\n  config_flow_endpoint: raw.video_module_endpoint || '',\n  config_tts_endpoint: raw.tts_endpoint || '',\n  config_render_endpoint: raw.render_endpoint || '',\n  config_image_endpoint: raw.image_endpoint || ''\n};\nreturn [{ json: cfg }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    -460,
+    1880
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000061",
+   "name": "Read Videos Log (Reporting)",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Videos"
+    }
+   },
+   "position": [
+    -200,
+    1880
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000062",
+   "name": "Pick Recent Videos",
+   "parameters": {
+    "jsCode": "// Pick Recent Videos — the digest covers the videos in the Videos log\n// published inside the config_recent_days window (default 28), newest\n// first, capped at config_max_digest_videos so one digest stays one\n// message. Videos with an unparseable Published At are kept (a typo in\n// the log should not make a video invisible).\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise (Reporting)').first().json; } catch (e) { cfg = {}; }\nconst days = cfg.config_recent_days || 28;\nconst cap = cfg.config_max_digest_videos || 10;\nconst cutoff = Date.now() - days * 24 * 60 * 60 * 1000;\nconst rows = $input.all().map(i => i.json)\n  .filter(r => String(r['Video ID'] || '').trim())\n  .map(r => ({ r: r, t: new Date(r['Published At']).getTime() }))\n  .filter(x => isNaN(x.t) || x.t >= cutoff)\n  .sort((a, b) => (isNaN(b.t) ? 0 : b.t) - (isNaN(a.t) ? 0 : a.t))\n  .slice(0, cap);\nreturn rows.map(x => ({ json: {\n  video_id: String(x.r['Video ID']).trim(),\n  video_title: String(x.r['Title'] || '').trim()\n} }));",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    60,
+    1880
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000063",
+   "name": "Fetch Video Stats",
+   "parameters": {
+    "method": "GET",
+    "options": {
+     "timeout": 30000
+    },
+    "queryParameters": {
+     "parameters": [
+      {
+       "name": "part",
+       "value": "snippet,statistics"
+      },
+      {
+       "name": "id",
+       "value": "={{ $json.video_id }}"
+      }
+     ]
+    },
+    "sendQuery": true,
+    "url": "https://www.googleapis.com/youtube/v3/videos"
+   },
+   "position": [
+    320,
+    1880
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "YouTube Data API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000064",
+   "name": "Prepare Stats Rows",
+   "parameters": {
+    "jsCode": "// Prepare Stats Rows — turn each videos.list response into one Stats\n// snapshot row for today (Date | Video ID | Title | Views | Likes |\n// Comments). Counts arrive as strings; store numbers. A video whose\n// stats call failed simply has no row today — the digest says so\n// rather than inventing a zero.\nlet picked = [];\ntry { picked = $('Pick Recent Videos').all().map(i => i.json); } catch (e) { picked = []; }\nconst titleById = {};\nfor (const p of picked) titleById[p.video_id] = p.video_title;\nconst today = new Date().toISOString().slice(0, 10);\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  const v = j.items && j.items[0];\n  if (!v || !v.id) continue;\n  const st = v.statistics || {};\n  const num = x => { const n = parseInt(x, 10); return isNaN(n) ? 0 : n; };\n  out.push({ json: {\n    'Date': today, 'Video ID': v.id,\n    'Title': (v.snippet && v.snippet.title) || titleById[v.id] || '',\n    'Views': num(st.viewCount), 'Likes': num(st.likeCount),\n    'Comments': num(st.commentCount),\n    video_id: v.id, video_title: (v.snippet && v.snippet.title) || titleById[v.id] || ''\n  } });\n}\nreturn out;",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    580,
+    1880
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000065",
+   "name": "Log Stats",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Date": "={{ $json.Date }}",
+      "Video ID": "={{ $json['Video ID'] }}",
+      "Title": "={{ $json.Title }}",
+      "Views": "={{ $json.Views }}",
+      "Likes": "={{ $json.Likes }}",
+      "Comments": "={{ $json.Comments }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Stats"
+    }
+   },
+   "position": [
+    840,
+    1880
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000066",
+   "name": "Fetch Comments",
+   "parameters": {
+    "method": "GET",
+    "options": {
+     "timeout": 30000
+    },
+    "queryParameters": {
+     "parameters": [
+      {
+       "name": "part",
+       "value": "snippet"
+      },
+      {
+       "name": "videoId",
+       "value": "={{ $json.video_id }}"
+      },
+      {
+       "name": "order",
+       "value": "time"
+      },
+      {
+       "name": "maxResults",
+       "value": "20"
+      },
+      {
+       "name": "textFormat",
+       "value": "plainText"
+      }
+     ]
+    },
+    "sendQuery": true,
+    "url": "https://www.googleapis.com/youtube/v3/commentThreads"
+   },
+   "position": [
+    1100,
+    1880
+   ],
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "credentials": {
+    "httpHeaderAuth": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "YouTube Data API key — Header Auth (placeholder)"
+    }
+   },
+   "onError": "continueErrorOutput"
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000067",
+   "name": "Read Comments Tab",
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Comments"
+    }
+   },
+   "position": [
+    1360,
+    1880
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000068",
+   "name": "Build Comment Rows",
+   "parameters": {
+    "jsCode": "// Build Comment Rows — new comments only: anything whose Comment ID\n// already sits in the Comments tab is dropped (the dedupe), so re-runs\n// never draft the same reply twice. Each new comment gets a DRAFT reply\n// beside it — a starting point for the owner, NEVER a posted reply.\n// Questions get a draft with an honest [your answer here] gap: a warm\n// guess posted under your name would be worse than a short wait.\nlet responses = [];\ntry { responses = $('Fetch Comments').all().map(i => i.json); } catch (e) { responses = []; }\nconst known = new Set($input.all().map(i => String(i.json['Comment ID'] || '').trim()).filter(Boolean));\nlet titles = {};\ntry {\n  for (const p of $('Pick Recent Videos').all()) titles[p.json.video_id] = p.json.video_title;\n} catch (e) { titles = {}; }\nconst draftFor = (author, text) => {\n  const first = String(author || 'there').split(' ')[0] || 'there';\n  if (String(text).includes('?')) {\n    return 'Thanks for the question, ' + first + '! Short answer: [your answer here] — ' +\n      'and a fuller breakdown is on the way in an upcoming video. Really appreciate you watching!';\n  }\n  const openers = [\n    'Thank you, ' + first + '! Glad this one helped.',\n    'Really appreciate that, ' + first + ' — thanks for watching!',\n    'That means a lot, ' + first + '! More like this coming soon.'\n  ];\n  let h = 0;\n  const s = String(author || '') + String(text || '');\n  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;\n  return openers[h % openers.length];\n};\nconst out = [];\nfor (const resp of responses) {\n  const threads = (resp && resp.items) || [];\n  for (const th of threads) {\n    const top = th.snippet && th.snippet.topLevelComment;\n    if (!top || !top.id || known.has(String(top.id))) continue;\n    const sn = top.snippet || {};\n    const videoId = th.snippet.videoId || sn.videoId || '';\n    const text = String(sn.textDisplay || sn.textOriginal || '').trim();\n    out.push({ json: {\n      'Comment ID': String(top.id), 'Video ID': videoId,\n      'Video Title': titles[videoId] || '',\n      'Author': String(sn.authorDisplayName || ''),\n      'Comment': text,\n      'Published At': String(sn.publishedAt || ''),\n      'Draft Reply': draftFor(sn.authorDisplayName, text),\n      'Status': 'Draft — awaiting your approval',\n      is_new_comment: true\n    } });\n    known.add(String(top.id));\n  }\n}\nreturn out;",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    1620,
+    1880
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000069",
+   "name": "New Comments?",
+   "parameters": {
+    "conditions": {
+     "combinator": "and",
+     "conditions": [
+      {
+       "id": "cond-main",
+       "leftValue": "={{ $json.is_new_comment }}",
+       "operator": {
+        "operation": "true",
+        "singleValue": true,
+        "type": "boolean"
+       }
+      }
+     ],
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     }
+    },
+    "options": {}
+   },
+   "position": [
+    1880,
+    1880
+   ],
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000070",
+   "name": "Log Comments",
+   "parameters": {
+    "columns": {
+     "mappingMode": "defineBelow",
+     "matchingColumns": [],
+     "schema": [],
+     "value": {
+      "Comment ID": "={{ $json['Comment ID'] }}",
+      "Video ID": "={{ $json['Video ID'] }}",
+      "Video Title": "={{ $json['Video Title'] }}",
+      "Author": "={{ $json.Author }}",
+      "Comment": "={{ $json.Comment }}",
+      "Published At": "={{ $json['Published At'] }}",
+      "Draft Reply": "={{ $json['Draft Reply'] }}",
+      "Status": "={{ $json.Status }}"
+     }
+    },
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "PASTE_YOUR_GOOGLE_SHEET_ID"
+    },
+    "operation": "append",
+    "options": {},
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Comments"
+    }
+   },
+   "position": [
+    2140,
+    1880
+   ],
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.2,
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Google Sheets — your account (placeholder)"
+    }
+   }
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000071",
+   "name": "Collect Digest Inputs",
+   "parameters": {
+    "aggregate": "aggregateAllItemData",
+    "options": {}
+   },
+   "position": [
+    2400,
+    1880
+   ],
+   "type": "n8n-nodes-base.aggregate",
+   "typeVersion": 1
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000072",
+   "name": "Assemble Digest",
+   "parameters": {
+    "jsCode": "// Assemble Digest — one message for the owner: today's numbers for the\n// recent videos, plus how many comment drafts are waiting. Everything\n// is counted from the nodes that produced it, and a quiet channel is\n// reported honestly as quiet — never padded.\nlet stats = [];\ntry { stats = $('Prepare Stats Rows').all().map(i => i.json); } catch (e) { stats = []; }\nlet comments = [];\ntry { comments = $('Build Comment Rows').all().map(i => i.json).filter(j => j && j.is_new_comment); } catch (e) { comments = []; }\nlet cfg = {};\ntry { cfg = $('CONFIG — Normalise (Reporting)').first().json; } catch (e) { cfg = {}; }\nconst today = new Date().toISOString().slice(0, 10);\nconst lines = ['📊 ' + (cfg.config_channel_name || 'Channel') + ' — daily digest (' + today + ')', ''];\nif (!stats.length) {\n  lines.push('No videos in the recent window yet — the digest fills in once the Videos log has entries.');\n} else {\n  let totalViews = 0;\n  for (const s of stats) {\n    totalViews += Number(s['Views'] || 0);\n    lines.push('• ' + s['Title'] + ' — ' + Number(s['Views'] || 0).toLocaleString('en-US') +\n      ' views · ' + Number(s['Likes'] || 0).toLocaleString('en-US') + ' likes · ' +\n      Number(s['Comments'] || 0).toLocaleString('en-US') + ' comments');\n  }\n  lines.push('');\n  lines.push('Total views across these ' + stats.length + ' video(s): ' + totalViews.toLocaleString('en-US'));\n}\nlines.push('');\nif (comments.length) {\n  const authors = [...new Set(comments.map(c => c['Author']).filter(Boolean))].slice(0, 5).join(', ');\n  lines.push('💬 ' + comments.length + ' new comment(s) drafted in the Comments tab' +\n    (authors ? ' (from ' + authors + ')' : '') + ' — drafts only; nothing was posted.');\n} else {\n  lines.push('💬 No new comments since the last digest.');\n}\nreturn [{ json: { digest_text: lines.join('\\n'),\n  config_owner_chat_id: cfg.config_owner_chat_id || '' } }];",
+    "mode": "runOnceForAllItems"
+   },
+   "position": [
+    2660,
+    1880
+   ],
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2
+  },
+  {
+   "id": "d2700000-0000-4000-8000-000000000073",
+   "name": "Send Daily Digest",
+   "parameters": {
+    "chatId": "={{ $json.config_owner_chat_id }}",
+    "text": "={{ $json.digest_text }}",
+    "additionalFields": {}
+   },
+   "position": [
+    2920,
+    1880
+   ],
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "credentials": {
+    "telegramApi": {
+     "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+     "name": "Telegram Bot — your bot (placeholder)"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Production — Daily Check": {
+   "main": [
+    [
+     {
+      "node": "Read Config",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Run Manually (Production)": {
+   "main": [
+    [
+     {
+      "node": "Read Config",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Config": {
+   "main": [
+    [
+     {
+      "node": "CONFIG — Normalise",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "CONFIG — Normalise": {
+   "main": [
+    [
+     {
+      "node": "Schedule Gate",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Schedule Gate": {
+   "main": [
+    [
+     {
+      "node": "Production Day?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Production Day?": {
+   "main": [
+    [
+     {
+      "node": "Read Topics Queue",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Topics Queue": {
+   "main": [
+    [
+     {
+      "node": "Read Videos Log",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Videos Log": {
+   "main": [
+    [
+     {
+      "node": "Pick Next Topic",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pick Next Topic": {
+   "main": [
+    [
+     {
+      "node": "Topic Found?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Topic Found?": {
+   "main": [
+    [
+     {
+      "node": "AI — Write the Script",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "AI — Brainstorm Topics",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "AI — Brainstorm Topics": {
+   "main": [
+    [
+     {
+      "node": "Save Brainstorm Candidates",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Save Brainstorm Candidates": {
+   "main": [
+    [
+     {
+      "node": "Append Candidates to Topics",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Append Candidates to Topics": {
+   "main": [
+    [
+     {
+      "node": "Notify — Topic Ideas Waiting",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "AI — Write the Script": {
+   "main": [
+    [
+     {
+      "node": "Prepare Scenes for Video Module",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Prepare Scenes for Video Module": {
+   "main": [
+    [
+     {
+      "node": "VIDEO MODULE — Generate Scene Clips (Google Flow)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "VIDEO MODULE — Generate Scene Clips (Google Flow)": {
+   "main": [
+    [
+     {
+      "node": "Collect Scene Clips",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Collect Scene Clips": {
+   "main": [
+    [
+     {
+      "node": "All Clips Ready?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "All Clips Ready?": {
+   "main": [
+    [
+     {
+      "node": "Generate Voiceover (TTS)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Generate Voiceover (TTS)": {
+   "main": [
+    [
+     {
+      "node": "Build Render Request",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build Render Request": {
+   "main": [
+    [
+     {
+      "node": "Render Video (Assembly Endpoint)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Render Video (Assembly Endpoint)": {
+   "main": [
+    [
+     {
+      "node": "AI — Metadata Pack",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "AI — Metadata Pack": {
+   "main": [
+    [
+     {
+      "node": "Parse Metadata",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Parse Metadata": {
+   "main": [
+    [
+     {
+      "node": "Generate Thumbnail",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Generate Thumbnail": {
+   "main": [
+    [
+     {
+      "node": "Finalise Package",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Alert — Production Service Failed",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Finalise Package": {
+   "main": [
+    [
+     {
+      "node": "Save Package to Ready",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Save Package to Ready": {
+   "main": [
+    [
+     {
+      "node": "Approval Required?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Approval Required?": {
+   "main": [
+    [
+     {
+      "node": "Send Approval Request",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Notify — Auto-Publish Scheduled",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Upload Check — Hourly": {
+   "main": [
+    [
+     {
+      "node": "Read Config (Upload)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Config (Upload)": {
+   "main": [
+    [
+     {
+      "node": "CONFIG — Normalise (Upload)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "CONFIG — Normalise (Upload)": {
+   "main": [
+    [
+     {
+      "node": "Read Ready Tab",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Ready Tab": {
+   "main": [
+    [
+     {
+      "node": "Pick Due Video",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pick Due Video": {
+   "main": [
+    [
+     {
+      "node": "Due for Publish?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Due for Publish?": {
+   "main": [
+    [
+     {
+      "node": "Download Rendered Video",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Download Rendered Video": {
+   "main": [
+    [
+     {
+      "node": "Upload to YouTube",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Upload to YouTube": {
+   "main": [
+    [
+     {
+      "node": "Download Thumbnail",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Download Thumbnail": {
+   "main": [
+    [
+     {
+      "node": "Set Custom Thumbnail",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Custom Thumbnail": {
+   "main": [
+    [
+     {
+      "node": "Log to Videos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Log to Videos": {
+   "main": [
+    [
+     {
+      "node": "Mark Package Uploaded",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mark Package Uploaded": {
+   "main": [
+    [
+     {
+      "node": "Notify — Published",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Telegram Trigger": {
+   "main": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Channel Operator (AI Agent)": {
+   "main": [
+    [
+     {
+      "node": "Send Chat Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "OpenAI Chat Model": {
+   "ai_languageModel": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "ai_languageModel",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Chat Memory": {
+   "ai_memory": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "ai_memory",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tool — Read Channel Sheets": {
+   "ai_tool": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "ai_tool",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tool — Set Flags & Approvals": {
+   "ai_tool": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "ai_tool",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tool — Manage Topics Queue": {
+   "ai_tool": [
+    [
+     {
+      "node": "Channel Operator (AI Agent)",
+      "type": "ai_tool",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Daily Digest — 08:00": {
+   "main": [
+    [
+     {
+      "node": "Read Config (Reporting)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Config (Reporting)": {
+   "main": [
+    [
+     {
+      "node": "CONFIG — Normalise (Reporting)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "CONFIG — Normalise (Reporting)": {
+   "main": [
+    [
+     {
+      "node": "Read Videos Log (Reporting)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Videos Log (Reporting)": {
+   "main": [
+    [
+     {
+      "node": "Pick Recent Videos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pick Recent Videos": {
+   "main": [
+    [
+     {
+      "node": "Fetch Video Stats",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Fetch Video Stats": {
+   "main": [
+    [
+     {
+      "node": "Prepare Stats Rows",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Prepare Stats Rows": {
+   "main": [
+    [
+     {
+      "node": "Log Stats",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Log Stats": {
+   "main": [
+    [
+     {
+      "node": "Fetch Comments",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Fetch Comments": {
+   "main": [
+    [
+     {
+      "node": "Read Comments Tab",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Comments Tab": {
+   "main": [
+    [
+     {
+      "node": "Build Comment Rows",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build Comment Rows": {
+   "main": [
+    [
+     {
+      "node": "New Comments?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "New Comments?": {
+   "main": [
+    [
+     {
+      "node": "Log Comments",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Collect Digest Inputs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Log Comments": {
+   "main": [
+    [
+     {
+      "node": "Collect Digest Inputs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Collect Digest Inputs": {
+   "main": [
+    [
+     {
+      "node": "Assemble Digest",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Assemble Digest": {
+   "main": [
+    [
+     {
+      "node": "Send Daily Digest",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "pinData": {},
+ "settings": {
+  "executionOrder": "v1",
+  "saveDataErrorExecution": "all",
+  "saveDataSuccessExecution": "all"
+ },
+ "staticData": null
+}
