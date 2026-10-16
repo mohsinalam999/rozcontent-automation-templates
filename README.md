@@ -6,6 +6,12 @@ This page is the catalogue: what each automation does for your business, in plai
 
 ---
 
+## Need something custom?
+
+We also build automations to your exact specifications and requirements. Tell us the process you run by hand and the result you want — we scope it and quote a fixed price before you pay anything. Custom builds from $300.
+
+Order or ask on WhatsApp: https://wa.me/923124207507 · Live demos of all 18 templates: https://rozcontent.com/services/automation
+
 ## The templates
 
 | # | Template | What it does for you |
