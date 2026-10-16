@@ -1,6 +1,6 @@
 # Template 27 — YouTube Channel Operator ⭐ FREE TEMPLATE
 
-**This template is FREE** — the complete workflow file is published in this folder, yours to import and run. If you'd rather not wire it up yourself, **RozContent will connect and install it on your own system for $100 one-time** (your accounts, your keys — our access ends at handover), with optional care afterwards, exactly like our other templates.
+**This template is FREE** — the complete workflow file is published in this folder, yours to import and run. If you'd rather not wire it up yourself, **RozContent will connect and install it for you for $100 one-time** — set up on a fresh n8n account that *you* create, and the moment we hand over, you change the password and our access ends completely (the full five-step model is at the bottom of this guide), with optional care afterwards.
 
 **The problem:** a faceless YouTube channel is five jobs wearing one hat — finding topics, writing scripts, generating visuals, voicing, editing, uploading, replying, tracking numbers. Each is small; together they eat the week, and the channel quietly stops the first time life gets busy. Hiring it out costs more than a small channel earns.
 
@@ -192,7 +192,15 @@ This template **orchestrates** — it does not conjure. The script model, Flow, 
 
 ## Want it running without the wiring?
 
-The template is free — but if you'd rather be making videos than connecting endpoints: **RozContent will connect and install Template 27 on your own system for $100 one-time** — your Sheet built, your credentials connected (by you, in your accounts), the Flow module and render endpoint wired, the chat agent's tools installed, and one full test video run through the approval gate with you. After that it's yours; an optional care plan ($75/mo) keeps it running as services change their APIs. Custom modules — a different video generator in the swappable slot, WhatsApp instead of Telegram, a Shorts + long-form pair of channels on one operator — are scoped as custom builds.
+The template is free — but if you'd rather be making videos than connecting endpoints, **RozContent will connect and install Template 27 for you for $100 one-time.** It works like this:
+
+1. **You create a new n8n account** — your own, cloud or self-hosted, created fresh for this.
+2. **You share that login with us through a secure channel** — never in plain chat or email.
+3. **We perform the full setup on your account** — import the template and connect *your* YouTube channel, *your* Flow account and *your* AI keys inside *your* n8n, along with your Sheet, your service endpoints and the chat agent's tools.
+4. **We run one full production cycle live** — topic to packaged video, through the approval gate — and show you the system working on your own system.
+5. **Handover: you immediately change your n8n login password.** That ends our access completely — and you can verify it yourself: the old password no longer works. From that moment we cannot see or touch your system.
+
+The only route by which access is ever re-granted is the optional care plan ($75/mo), which keeps the system running as services change their APIs — granted by you, at your choice, only if you take it. Custom modules — a different video generator in the swappable slot, WhatsApp instead of Telegram, a Shorts + long-form pair of channels on one operator — are scoped as custom builds.
 
 **RozContent Automation — done-for-you builds from $250 + care plans. (Template 27: free file, $100 one-time install.)**
 📱 WhatsApp [+92 312 4207507](https://wa.me/923124207507) · 🌐 [RozContent](https://rozcontent.com)
